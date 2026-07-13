@@ -1,0 +1,8 @@
+{
+  "name": "Disfraces Madi v2",
+  "description": "Exclusiva tienda de alquiler, confección y diseño a medida de disfraces y polleras tradicionales del Carnaval de Barranquilla.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
