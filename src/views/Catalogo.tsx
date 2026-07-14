@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, SlidersHorizontal, Star, Heart, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { Search, SlidersHorizontal, Heart, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 import { Costume } from '../types';
 import { COSTUMES, CONTACT_INFO } from '../data';
 
@@ -9,7 +9,7 @@ interface CatalogoProps {
   onToggleFavorite: (id: string) => void;
 }
 
-type CategoryFilter = 'Todos' | 'Tradicional' | 'Fantasía' | 'Comparsa' | 'Infantil';
+type CategoryFilter = 'Todos' | 'Cumbia' | 'Garabato' | 'Mapalé' | 'Marimonda' | 'Negrita Puloy' | 'Congo' | 'Monocuco' | 'Muerte' | 'Fantasía';
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'rating-desc';
 
 export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: CatalogoProps) {
@@ -21,7 +21,9 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: Ca
   const [sortBy, setSortBy] = useState<SortOption>('default');
 
   // List of sizes available for filtering
-  const allSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  const childSizes = ['4', '6', '8', '10', '12', '14', '16'];
+  const adultSizes = ['XS', 'S', 'M', 'L', 'XL'];
+  const allSizes = [...childSizes, ...adultSizes];
 
   // Toggle size filter
   const handleSizeToggle = (size: string) => {
@@ -131,7 +133,7 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: Ca
             {/* 1. Search Bar */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-[#1e1b18]/70 uppercase tracking-wide font-mono">
-                Buscar Costume
+                Buscar Disfraz
               </label>
               <div className="relative">
                 <input
@@ -151,7 +153,7 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: Ca
                 Categoría
               </label>
               <div className="space-y-1.5 flex flex-col">
-                {(['Todos', 'Tradicional', 'Fantasía', 'Comparsa', 'Infantil'] as CategoryFilter[]).map((cat) => (
+                {(['Todos', 'Cumbia', 'Garabato', 'Mapalé', 'Marimonda', 'Negrita Puloy', 'Congo', 'Monocuco', 'Muerte', 'Fantasía'] as CategoryFilter[]).map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
@@ -172,23 +174,49 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: Ca
               <label className="text-xs font-bold text-[#1e1b18]/70 uppercase tracking-wide font-mono block">
                 Tallas Disponibles
               </label>
-              <div className="grid grid-cols-3 gap-2" id="sizes-filter-grid">
-                {allSizes.map((size) => {
-                  const isChecked = selectedSizes.includes(size);
-                  return (
-                    <button
-                      key={size}
-                      onClick={() => handleSizeToggle(size)}
-                      className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                        isChecked
-                          ? 'bg-[#a8001a] text-white border-transparent shadow'
-                          : 'bg-white border-[#a8001a]/15 text-[#1e1b18]/75 hover:border-[#a8001a]/40'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
+              <div className="space-y-3" id="sizes-filter-grid">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-[#1e1b18]/70 font-semibold font-mono mb-2">Niños</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {childSizes.map((size) => {
+                      const isChecked = selectedSizes.includes(size);
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => handleSizeToggle(size)}
+                          className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                            isChecked
+                              ? 'bg-[#a8001a] text-white border-transparent shadow'
+                              : 'bg-white border-[#a8001a]/15 text-[#1e1b18]/75 hover:border-[#a8001a]/40'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-[#1e1b18]/70 font-semibold font-mono mb-2">Adultos</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {adultSizes.map((size) => {
+                      const isChecked = selectedSizes.includes(size);
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => handleSizeToggle(size)}
+                          className={`py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                            isChecked
+                              ? 'bg-[#a8001a] text-white border-transparent shadow'
+                              : 'bg-white border-[#a8001a]/15 text-[#1e1b18]/75 hover:border-[#a8001a]/40'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -304,11 +332,6 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: Ca
                           <span className="bg-[#1e1b18] text-[#fff8f5] text-[9px] font-mono tracking-widest font-bold uppercase px-2.5 py-1 rounded-md shadow-sm">
                             {costume.category}
                           </span>
-                          {!costume.isAvailable && (
-                            <span className="bg-red-600 text-white text-[9px] font-mono tracking-widest font-bold uppercase px-2.5 py-1 rounded-md shadow-sm">
-                              Reservado / No Disp.
-                            </span>
-                          )}
                           {costume.featured && (
                             <span className="bg-[#fdc003] text-[#1e1b18] text-[9px] font-mono tracking-widest font-bold uppercase px-2.5 py-1 rounded-md shadow-sm flex items-center gap-0.5">
                               ★ Alta Gama
@@ -338,13 +361,8 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: Ca
                       {/* Info Section */}
                       <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs text-[#1e1b18]/50 font-medium">
-                            <span className="font-mono">Tallas: {costume.sizes.join(', ')}</span>
-                            <div className="flex items-center text-[#fdc003] font-bold">
-                              <Star className="h-3.5 w-3.5 fill-[#fdc003] text-[#fdc003] mr-0.5" />
-                              <span className="text-[#1e1b18] text-[11px]">{costume.rating}</span>
-                              <span className="text-[10px] text-[#1e1b18]/40 ml-0.5">({costume.reviewsCount})</span>
-                            </div>
+                          <div className="text-xs text-[#1e1b18]/50 font-medium font-mono">
+                            Tallas: {costume.sizes.join(', ')}
                           </div>
                           <h3 className="font-serif font-bold text-base text-[#1e1b18] group-hover:text-[#a8001a] transition-colors leading-snug">
                             {costume.name}

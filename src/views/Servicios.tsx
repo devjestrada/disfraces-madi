@@ -1,5 +1,5 @@
 import React from 'react';
-import { Scissors, ShoppingBag, Clock3, Sparkles, Calendar, ShieldCheck, HeartHandshake, CheckCircle } from 'lucide-react';
+import { Scissors, ShoppingBag, Clock3, Sparkles, Calendar, CheckCircle } from 'lucide-react';
 import { CONTACT_INFO } from '../data';
 
 interface ServiciosProps {
@@ -168,25 +168,7 @@ export default function Servicios({ onNavigate }: ServiciosProps) {
           </div>
         </div>
 
-        {/* 3. Sanitization Quality Guarantee Banner */}
-        <div className="bg-white rounded-3xl p-8 md:p-12 border border-[#a8001a]/10 shadow-sm flex flex-col md:flex-row items-center gap-8 mb-16" id="sanitization-card">
-          <div className="bg-green-50 text-green-700 p-5 rounded-2xl">
-            <ShieldCheck className="h-12 w-12 text-green-600" />
-          </div>
-          <div className="space-y-2 flex-1">
-            <span className="text-green-600 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1">
-              <HeartHandshake className="h-4 w-4" /> Compromiso de Bienestar Total
-            </span>
-            <h3 className="font-serif text-xl md:text-2xl font-bold text-[#1e1b18]">
-              Desinfección Hipoalergénica con Vapor Seco
-            </h3>
-            <p className="text-xs sm:text-sm text-[#1e1b18]/70 leading-relaxed font-sans">
-              Entendemos lo importante que es la higiene en prendas de uso continuo. Por ello, contamos con maquinaria de lavandería industrial y vapor seco a 140°C que elimina el 99.9% de gérmenes y alérgenos sin debilitar las fibras delicadas de la pollera ni dañar las lentejuelas. ¡Luce radiante con la máxima frescura garantizada!
-            </p>
-          </div>
-        </div>
-
-        {/* 4. Action Banner */}
+        {/* 3. Action Banner */}
         <div className="bg-[#a8001a] text-white rounded-3xl p-8 md:p-12 text-center space-y-6 relative overflow-hidden shadow-xl" id="servicios-cta">
           <div className="absolute left-6 top-6 opacity-10">
             <Calendar className="h-48 w-48 text-white" />

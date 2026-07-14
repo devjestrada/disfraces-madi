@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Clock, Sparkles, CheckCircle } from 'lucide-react';
+import { Mail, Clock, Sparkles } from 'lucide-react';
 import { CONTACT_INFO } from '../data';
 
 export default function Contacto() {
@@ -38,7 +38,7 @@ export default function Contacto() {
               </span>
               <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#fdc003] pt-1">Atención Inmediata</h3>
               <p className="text-sm text-white/80 leading-relaxed font-sans">
-                En Atelier Madi no realizamos agendas sistematizadas automáticas. Gestionamos todas las citas, cotizaciones y consultas directa y humanamente por WhatsApp para verificar disponibilidad de fecha y hora cómodas para tu fitting y brindarte una experiencia totalmente exclusiva.
+                En Disfraces Madi no realizamos agendas sistematizadas automáticas. Gestionamos todas las citas, cotizaciones y consultas directa y humanamente por WhatsApp para verificar disponibilidad de fecha y hora cómodas para tu fitting y brindarte una experiencia totalmente exclusiva.
               </p>
             </div>
             
@@ -116,12 +116,7 @@ export default function Contacto() {
               </p>
             </div>
 
-            <div className="text-xs sm:text-sm text-[#1e1b18]/65 leading-relaxed font-sans flex items-start space-x-2.5">
-              <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-              <p>
-                <strong>Medidas Sanitarias:</strong> Todas las prendas son sometidas a un protocolo riguroso de desinfección en seco antes de tu fitting presencial para garantizar tu absoluta seguridad.
-              </p>
-            </div>
+
           </div>
 
         </div>

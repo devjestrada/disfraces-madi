@@ -16,7 +16,7 @@ export const COSTUMES: Costume[] = [
   {
     id: 'gala-cumbia-real',
     name: 'Gala de Cumbia Real',
-    category: 'Tradicional',
+    category: 'Cumbia',
     rating: 4.9,
     reviewsCount: 38,
     description: 'Nuestra obra maestra. Una pollera de cumbia de gama alta, elaborada con encajes de bolillo importados, finas arandelas de encaje y adornos dorados hechos a mano. Diseñada para lucir imponente en desfiles, coronaciones y eventos de gala.',
@@ -49,7 +49,7 @@ export const COSTUMES: Costume[] = [
   {
     id: 'marimonda-barrio-abajo',
     name: 'Marimonda de Barrio Abajo',
-    category: 'Comparsa',
+    category: 'Marimonda',
     rating: 4.8,
     reviewsCount: 45,
     description: 'El disfraz más alegre, irreverente y tradicional del Carnaval de Barranquilla. Diseñado en retazos de colores sumamente llamativos y vibrantes. Incluye la clásica máscara con nariz larga y orejas gigantes que encarnan la burla y el gozo barranquillero.',
@@ -75,12 +75,12 @@ export const COSTUMES: Costume[] = [
     salePrice: 480000,
     isAvailable: true,
     featured: true,
-    designer: 'Atelier Madi'
+    designer: 'Disfraces Madi'
   },
   {
     id: 'pollera-cumbia-tradicional',
     name: 'Pollera de Cumbia Tradicional',
-    category: 'Tradicional',
+    category: 'Cumbia',
     rating: 4.7,
     reviewsCount: 24,
     description: 'La pollera clásica a cuadros rojos y blancos que identifica al folclor colombiano. Sencilla pero imponente, confeccionada con tules que le otorgan volumen natural y ligereza. Perfecta para bailadoras y cumbiambas completas.',
@@ -111,7 +111,7 @@ export const COSTUMES: Costume[] = [
   {
     id: 'garabato-elegancia',
     name: 'Garabato Elegancia',
-    category: 'Tradicional',
+    category: 'Garabato',
     rating: 4.9,
     reviewsCount: 19,
     description: 'La indumentaria de la Danza del Garabato que escenifica la lucha entre la vida y la muerte. Chaleco negro suntuosamente bordado con hilos de oro y lentejuelas, pantalón bombacho amarillo y capa roja señorial con cintas multicolor.',
@@ -172,7 +172,7 @@ export const COSTUMES: Costume[] = [
   {
     id: 'congo-junior-traditional',
     name: 'Congo Real de Barranquilla',
-    category: 'Tradicional',
+    category: 'Congo',
     rating: 4.8,
     reviewsCount: 22,
     description: 'La danza de negros congos es la más antigua del carnaval. Este atuendo cuenta con el turbante cilíndrico imponente adornado con flores artificiales, mariposas de colores y un largo velo posterior de encaje que llega a los talones.',
@@ -203,7 +203,7 @@ export const COSTUMES: Costume[] = [
   {
     id: 'jose-lito-luxury',
     name: 'Jose Lito Carnavalero',
-    category: 'Comparsa',
+    category: 'Muerte',
     rating: 4.6,
     reviewsCount: 11,
     description: 'Inspirado en el mítico "Joselito Carnaval", personaje que muere de tanto gozar y resucita al año siguiente. Un frac o esmoquin carnavalero desestructurado con remiendos alegres, sombrero de paja florido y pañuelo fúnebre jocoso.',
@@ -294,8 +294,8 @@ export const REVIEWS: Review[] = [
 ];
 
 export const STATS = {
-  yearsOfTradition: '35+',
-  carnivalsLived: '35',
+  yearsOfTradition: '25+',
+  carnivalsLived: '25',
   costumesRented: '12K+',
   happyHearts: '5K+'
 };
@@ -303,8 +303,8 @@ export const STATS = {
 export const CONTACT_INFO = {
   address: 'Visitas exclusivas con cita previa',
   city: 'Barranquilla, Atlántico, Colombia',
-  phone: '+57 (312) 456-7890',
-  whatsapp: '573124567890',
+  phone: '+57 (301) 726-3172',
+  whatsapp: '573017263172',
   email: 'contacto@disfracesmadi.com',
   workingHours: [
     { days: 'Lunes a Viernes', hours: '8:00 AM - 7:00 PM' },
