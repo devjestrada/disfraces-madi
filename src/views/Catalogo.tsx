@@ -1,24 +1,29 @@
 import React, { useState, useMemo } from 'react';
 import { Search, SlidersHorizontal, Heart, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 import { Costume } from '../types';
-import { COSTUMES, CONTACT_INFO } from '../data';
+import { COSTUMES } from '../data';
+import { usePublicData } from '../context/PublicDataContext';
 
 interface CatalogoProps {
   onNavigate: (view: string, costumeId?: string) => void;
   favorites: string[];
   onToggleFavorite: (id: string) => void;
+  costumes: Costume[];
 }
 
 type CategoryFilter = 'Todos' | 'Cumbia' | 'Garabato' | 'Mapalé' | 'Marimonda' | 'Negrita Puloy' | 'Congo' | 'Monocuco' | 'Muerte' | 'Fantasía';
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'rating-desc';
 
-export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: CatalogoProps) {
+export default function Catalogo({ onNavigate, favorites, onToggleFavorite, costumes }: CatalogoProps) {
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('Todos');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('default');
+
+  const costumesData = costumes.length > 0 ? costumes : COSTUMES;
+  const { contactInfo } = usePublicData();
 
   // List of sizes available for filtering
   const childSizes = ['4', '6', '8', '10', '12', '14', '16'];
@@ -36,7 +41,7 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: Ca
 
   // Filtered and Sorted costumes
   const filteredCostumes = useMemo(() => {
-    let result = [...COSTUMES];
+    let result = [...costumesData];
 
     // Search query
     if (searchQuery.trim()) {
@@ -259,7 +264,7 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: Ca
             {/* Top Bar for Grid Stats */}
             <div className="flex flex-col sm:flex-row items-center justify-between bg-white px-6 py-4 rounded-xl border border-[#a8001a]/10 shadow-sm gap-4">
               <p className="text-sm font-medium text-[#1e1b18]/80">
-                Mostrando <strong className="text-[#a8001a]">{filteredCostumes.length}</strong> de <strong className="text-[#1e1b18]">{COSTUMES.length}</strong> disfraces de carnaval
+                Mostrando <strong className="text-[#a8001a]">{filteredCostumes.length}</strong> de <strong className="text-[#1e1b18]">{costumesData.length}</strong> disfraces de carnaval
               </p>
               {selectedCategory !== 'Todos' && (
                 <span className="bg-[#a8001a]/10 text-[#a8001a] text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider font-mono">
@@ -280,7 +285,7 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite }: Ca
                 </p>
               </div>
               <a
-                href={`https://wa.me/${CONTACT_INFO.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, vi el catálogo y me gustaría solicitar disponibilidad para agendar una cita de fitting presencial.')}`}
+                href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, vi el catálogo y me gustaría solicitar disponibilidad para agendar una cita de fitting presencial.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-[#25d366] hover:bg-[#20ba5a] text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-sm"

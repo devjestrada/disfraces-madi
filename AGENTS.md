@@ -159,10 +159,28 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
 
 ## Manejo de specs de modificaciones
 
-- Las specs de modificaciones (como `spec-*.md`) se encuentran en la carpeta `docs/specs/`.
+- Las specs de modificaciones (como `spec-*.md`) se encuentran en la carpeta `docs/specs/specs_backlog`.
 - Al implementar completamente una spec (todos sus puntos aplicados y verificados en el código), el agente debe:
   1. Confirmar que todos los cambios listados en la spec fueron aplicados correctamente.
-  2. Mover el archivo de la spec a la carpeta `docs/specs_done/` (crear la carpeta si no existe).
+  2. Mover el archivo de la spec a la carpeta `docs/specs/specs_done/` (crear la carpeta si no existe).
   3. Si algún punto de la spec no pudo aplicarse (por ejemplo, texto "Actual" no encontrado exactamente), dejar constancia de ello en un comentario al final del archivo antes de moverlo, indicando qué se aplicó al texto equivalente más cercano.
-  4. No mover specs parcialmente implementadas: solo se mueven a `docs/specs_done/` cuando el 100% de los puntos fue resuelto (aplicado o reportado explícitamente como no encontrado).
+  4. No mover specs parcialmente implementadas: solo se mueven a `docs/specs/specs_done/` cuando el 100% de los puntos fue resuelto (aplicado o reportado explícitamente como no encontrado).
 - Nomenclatura sugerida al mover: mantener el nombre original del archivo, sin renombrar, para preservar trazabilidad.
+
+### Flujo de trabajo por spec
+
+1. **Rama de trabajo:** Antes de iniciar la implementación de una spec, crear una nueva rama de tipo `feature` (ej. `feature/nombre-de-la-spec`).
+2. **Planeación:** Primero revisar la spec y generar un plan específico de implementación (qué archivos/componentes se van a modificar y cómo). Presentar este plan como resultado antes de escribir código.
+3. **Implementación:** Una vez aprobado o compartido el plan, proceder con la implementación de los cambios descritos en la spec.
+4. **Confirmación de cambios:** Al finalizar la implementación, preguntar al usuario si los cambios se aplicaron correctamente.
+   - Si el usuario **confirma** que todo está correcto:
+     a. Mover el archivo de la spec a la carpeta `docs/specs/specs_done/` (crear la carpeta si no existe).
+     b. Subir (incrementar) la versión en `package.json`.
+   - Si el usuario **no confirma** o reporta problemas, no mover la spec ni actualizar la versión; realizar los ajustes necesarios y volver a preguntar.
+5. **Reporte de excepciones:** Si algún punto de la spec no pudo aplicarse tal cual (por ejemplo, texto "Actual" no encontrado exactamente), dejar constancia de ello en un comentario al final del archivo de spec antes de moverlo, indicando qué se aplicó al texto equivalente más cercano.
+6. **Nomenclatura al mover:** Mantener el nombre original del archivo de spec, sin renombrar, para preservar trazabilidad.
+
+### Reglas adicionales
+
+- No mover specs parcialmente implementadas: solo se mueven a `docs/specs/specs_done/` cuando el 100% de los puntos fue resuelto (aplicado o reportado explícitamente como no encontrado) **y** el usuario confirmó los cambios.
+- Cada spec debe corresponder a una única rama `feature` y a un único incremento de versión en `package.json`.

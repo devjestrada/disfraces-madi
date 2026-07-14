@@ -54,3 +54,24 @@ export interface Review {
   avatar: string;
   date: string;
 }
+
+export interface WorkingHour {
+  days: string;
+  hours: string;
+}
+
+export interface ContactInfo {
+  address: string;
+  city: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  workingHours: WorkingHour[];
+}
+
+export interface SiteStats {
+  yearsOfTradition: string;
+  carnivalsLived: string;
+  costumesRented: string;
+  happyHearts: string;
+}

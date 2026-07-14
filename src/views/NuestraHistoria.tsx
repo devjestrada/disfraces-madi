@@ -1,6 +1,6 @@
 import React from 'react';
 import { Compass, Sparkles, Quote, Award, Calendar, Heart } from 'lucide-react';
-import { ASSETS, STATS } from '../data';
+import { ASSETS } from '../data';
 
 interface NuestraHistoriaProps {
   onNavigate: (view: string) => void;

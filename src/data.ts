@@ -1,15 +1,23 @@
-import heroBanner from './assets/images/carnival_hero_banner_1783825164543.jpg';
+import carnival_main_banner from './assets/init_page/images/carnival_main_banner.jpg';
 import galaCumbia from './assets/images/gala_cumbia_dress_1783825177019.jpg';
 import marimonda from './assets/images/marimonda_costume_1783825190583.jpg';
-import atelierMadi from './assets/images/atelier_madi_1783825203627.jpg';
+import sra_madi_nuestra_historia from './assets/init_page/images/sra_madi_nuestra_historia.png';
+
+import categoria_cumbia from './assets/init_page/images/categorias_destacadas/cumbia.png';
+import categoria_mapale from './assets/init_page/images/categorias_destacadas/mapale.png';
+import categoria_garabato from './assets/init_page/images/categorias_destacadas/garabato.png';
+import categoria_fantasia from './assets/init_page/images/categorias_destacadas/fantasia.png';
 
 import { Costume, Review } from './types';
 
 export const ASSETS = {
-  heroBanner,
-  galaCumbia,
-  marimonda,
-  atelierMadi,
+  carnival_main_banner,
+  sra_madi_nuestra_historia,
+  atelierMadi: sra_madi_nuestra_historia,
+  categoria_cumbia,
+  categoria_mapale,
+  categoria_garabato,
+  categoria_fantasia
 };
 
 export const COSTUMES: Costume[] = [

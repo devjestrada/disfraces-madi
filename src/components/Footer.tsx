@@ -1,12 +1,14 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Clock, Sparkles, Heart } from 'lucide-react';
-import { CONTACT_INFO } from '../data';
+import { usePublicData } from '../context/PublicDataContext';
 
 interface FooterProps {
   onNavigate: (view: string) => void;
 }
 
 export default function Footer({ onNavigate }: FooterProps) {
+  const { contactInfo } = usePublicData();
+
   return (
     <footer className="bg-[#1e1b18] text-[#fff8f5] pt-16 pb-8 border-t-4 border-[#a8001a]" id="main-footer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,7 +73,7 @@ export default function Footer({ onNavigate }: FooterProps) {
               Horario de Atención
             </h3>
             <div className="space-y-3.5 text-sm text-[#fff8f5]/80">
-              {CONTACT_INFO.workingHours.map((schedule, idx) => (
+              {contactInfo.workingHours.map((schedule, idx) => (
                 <div key={idx} className="flex items-start space-x-2">
                   <Clock className="h-4 w-4 text-[#fdc003] shrink-0 mt-0.5" />
                   <div>
@@ -94,14 +96,14 @@ export default function Footer({ onNavigate }: FooterProps) {
             <ul className="space-y-3.5 text-sm text-[#fff8f5]/80">
               <li className="flex items-center space-x-2.5">
                 <Phone className="h-4 w-4 text-[#fdc003]" />
-                <a href={`https://wa.me/${CONTACT_INFO.whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#fdc003] transition-colors font-semibold">
-                  WhatsApp: {CONTACT_INFO.phone}
+                <a href={`https://wa.me/${contactInfo.whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#fdc003] transition-colors font-semibold">
+                  WhatsApp: {contactInfo.phone}
                 </a>
               </li>
               <li className="flex items-center space-x-2.5">
                 <Mail className="h-4 w-4 text-[#fdc003]" />
-                <a href={`mailto:${CONTACT_INFO.email}`} className="hover:text-[#fdc003] transition-colors break-all">
-                  Email: {CONTACT_INFO.email}
+                <a href={`mailto:${contactInfo.email}`} className="hover:text-[#fdc003] transition-colors break-all">
+                  Email: {contactInfo.email}
                 </a>
               </li>
             </ul>

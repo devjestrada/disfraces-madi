@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { Heart, Sparkles, Ruler, CheckCircle, ArrowLeft } from 'lucide-react';
-import { COSTUMES, CONTACT_INFO } from '../data';
+import { COSTUMES } from '../data';
+import { usePublicData } from '../context/PublicDataContext';
+import { Costume } from '../types';
 
 interface CatalogoDetailProps {
-  costumeId: string;
+  costumeId?: string;
+  costumeProp?: Costume;
   onNavigate: (view: string, costumeId?: string) => void;
   favorites: string[];
   onToggleFavorite: (id: string) => void;
 }
 
-export default function CatalogoDetail({ costumeId, onNavigate, favorites, onToggleFavorite }: CatalogoDetailProps) {
-  const costume = COSTUMES.find((c) => c.id === costumeId) || COSTUMES[0];
+export default function CatalogoDetail({ costumeId, costumeProp, onNavigate, favorites, onToggleFavorite }: CatalogoDetailProps) {
+  const costume = costumeProp ?? (COSTUMES.find((c) => c.id === costumeId) || COSTUMES[0]);
 
   const [activeImage, setActiveImage] = useState(costume.primaryImage);
   const [selectedSize, setSelectedSize] = useState<string>(costume.sizes[0]);
@@ -18,10 +21,12 @@ export default function CatalogoDetail({ costumeId, onNavigate, favorites, onTog
 
   const isFav = favorites.includes(costume.id);
 
+  const { contactInfo } = usePublicData();
+
   const handleWhatsAppInquiry = () => {
     const text = `Hola Sra. Madi, me interesa consultar el alquiler del vestido de carnaval "${costume.name}" en talla ${selectedSize}. ¿Tienen disponibilidad?`;
     const formattedText = encodeURIComponent(text);
-    const url = `https://wa.me/${CONTACT_INFO.whatsapp}?text=${formattedText}`;
+    const url = `https://wa.me/${contactInfo.whatsapp}?text=${formattedText}`;
     window.open(url, '_blank');
   };
 
@@ -262,7 +267,7 @@ export default function CatalogoDetail({ costumeId, onNavigate, favorites, onTog
               <button
                 onClick={() => {
                   const text = `Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial para probarme el disfraz "${costume.name}" en talla ${selectedSize}.`;
-                  window.open(`https://wa.me/${CONTACT_INFO.whatsapp}?text=${encodeURIComponent(text)}`, '_blank');
+                  window.open(`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent(text)}`, '_blank');
                 }}
                 className="w-full h-14 bg-[#25d366] hover:bg-[#20ba5a] text-white font-bold text-sm tracking-wider uppercase rounded-full shadow-lg flex items-center justify-center space-x-2.5 cursor-pointer transition-all hover:-translate-y-0.5 active:scale-95"
               >

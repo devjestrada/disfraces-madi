@@ -1,7 +1,8 @@
 import React from 'react';
 import { Sparkles, ArrowRight, Star, Heart, Calendar, Compass, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
-import { ASSETS, STATS, REVIEWS, CONTACT_INFO } from '../data';
+import { ASSETS } from '../data';
+import { usePublicData } from '../context/PublicDataContext';
 
 interface InicioProps {
   onNavigate: (view: string, costumeId?: string) => void;
@@ -15,31 +16,33 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
       id: 'Cumbia',
       name: 'Cumbia',
       desc: 'Polleras majestuosas y ritmo eterno para bailar con orgullo.',
-      img: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=800&q=80',
+      img: ASSETS.categoria_cumbia,
       badge: 'Cumbia'
     },
     {
       id: 'Fantasía',
       name: 'Fantasía',
       desc: 'Trajes de ensueño que brillan en cada desfile y coronación.',
-      img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80',
+      img: ASSETS.categoria_fantasia,
       badge: 'Fantasía'
     },
     {
       id: 'Mapalé',
       name: 'Mapalé',
       desc: 'Fuerza ancestral y movimiento intenso con cada pisada.',
-      img: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
+      img: ASSETS.categoria_mapale,
       badge: 'Mapalé'
     },
     {
       id: 'Garabato',
       name: 'Garabato',
       desc: 'Elegancia ancestral que encarna la danza del duelo y su espíritu.',
-      img: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=800&q=80',
+      img: ASSETS.categoria_garabato,
       badge: 'Garabato'
     }
   ];
+
+  const { contactInfo, siteStats, reviews } = usePublicData();
 
   return (
     <div className="bg-[#fff8f5]" id="inicio-view-root">
@@ -48,7 +51,7 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
         {/* Ambient background image */}
         <div className="absolute inset-0 z-0">
           <img
-            src={ASSETS.heroBanner}
+            src={ASSETS.carnival_main_banner}
             alt="Carnaval de Barranquilla"
             className="w-full h-full object-cover scale-105 filter brightness-45 contrast-105"
             referrerPolicy="no-referrer"
@@ -104,7 +107,7 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
               <ArrowRight className="h-4.5 w-4.5" />
             </button>
             <a
-              href={`https://wa.me/${CONTACT_INFO.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial en la boutique.')}`}
+              href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial en la boutique.')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto flex items-center justify-center space-x-2.5 px-8 py-4 bg-[#25d366] hover:bg-[#20ba5a] text-white font-semibold rounded-full shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
@@ -122,19 +125,19 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
       <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 mb-20" id="stats-section">
         <div className="bg-white rounded-3xl p-8 md:p-10 shadow-2xl border border-[#a8001a]/10 grid grid-cols-2 lg:grid-cols-4 gap-8 divide-y sm:divide-y-0 lg:divide-x divide-[#a8001a]/10">
           <div className="text-center p-4">
-            <p className="font-serif text-4xl md:text-5xl font-bold text-[#a8001a]">{STATS.yearsOfTradition}</p>
+            <p className="font-serif text-4xl md:text-5xl font-bold text-[#a8001a]">{siteStats.yearsOfTradition}</p>
             <p className="text-xs uppercase tracking-wider font-semibold text-[#1e1b18]/60 mt-2 font-mono">Años de Tradición</p>
           </div>
           <div className="text-center p-4">
-            <p className="font-serif text-4xl md:text-5xl font-bold text-[#a8001a]">{STATS.carnivalsLived}</p>
+            <p className="font-serif text-4xl md:text-5xl font-bold text-[#a8001a]">{siteStats.carnivalsLived}</p>
             <p className="text-xs uppercase tracking-wider font-semibold text-[#1e1b18]/60 mt-2 font-mono">Carnavales Vividos</p>
           </div>
           <div className="text-center p-4">
-            <p className="font-serif text-4xl md:text-5xl font-bold text-[#a8001a]">{STATS.costumesRented}</p>
+            <p className="font-serif text-4xl md:text-5xl font-bold text-[#a8001a]">{siteStats.costumesRented}</p>
             <p className="text-xs uppercase tracking-wider font-semibold text-[#1e1b18]/60 mt-2 font-mono">Vestidos Alquilados</p>
           </div>
           <div className="text-center p-4">
-            <p className="font-serif text-4xl md:text-5xl font-bold text-[#a8001a]">{STATS.happyHearts}</p>
+            <p className="font-serif text-4xl md:text-5xl font-bold text-[#a8001a]">{siteStats.happyHearts}</p>
             <p className="text-xs uppercase tracking-wider font-semibold text-[#1e1b18]/60 mt-2 font-mono">Corazones Felices</p>
           </div>
         </div>
@@ -201,14 +204,14 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
               <div className="absolute -top-6 -left-6 w-32 h-32 border-t-4 border-l-4 border-[#fdc003] rounded-tl-3xl opacity-50 z-0"></div>
               <div className="absolute -bottom-6 -right-6 w-32 h-32 border-b-4 border-r-4 border-[#a8001a] rounded-br-3xl opacity-50 z-0"></div>
               <img
-                src={ASSETS.atelierMadi}
+                src={ASSETS.sra_madi_nuestra_historia}
                 alt="Atelier de Costura de Madi"
                 className="w-full rounded-2xl shadow-2xl relative z-10 border border-white/10"
                 referrerPolicy="no-referrer"
               />
               <div className="absolute -bottom-4 left-6 bg-[#fdc003] text-[#1e1b18] px-6 py-3 rounded-xl shadow-lg z-20 font-serif font-bold text-sm flex items-center space-x-2">
                 <Sparkles className="h-4 w-4" />
-                <span>35+ Años de Costura Carnavalera</span>
+                <span>25+ Años de Tradición Carnavalera</span>
               </div>
             </div>
 
@@ -262,7 +265,7 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8" id="testimonials-grid">
-            {REVIEWS.map((review) => (
+            {reviews.map((review) => (
               <div
                 key={review.id}
                 className="bg-white p-8 rounded-3xl border border-[#a8001a]/10 hover:border-[#a8001a]/30 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between"
@@ -334,7 +337,7 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
             <a
-              href={`https://wa.me/${CONTACT_INFO.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial en la boutique.')}`}
+              href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial en la boutique.')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto px-8 py-3.5 bg-[#25d366] hover:bg-[#20ba5a] text-white font-bold rounded-full text-sm shadow-lg tracking-wider uppercase transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center space-x-2.5"

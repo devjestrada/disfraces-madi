@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MessageCircle, X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CONTACT_INFO } from '../data';
+import { usePublicData } from '../context/PublicDataContext';
 
 interface WhatsAppButtonProps {
   selectedCostumeName?: string;
@@ -15,9 +15,11 @@ export default function WhatsAppButton({ selectedCostumeName }: WhatsAppButtonPr
     { text: '🗓️ Agendar cita para probarme un disfraz', label: 'Agendar Cita' },
   ];
 
+  const { contactInfo } = usePublicData();
+
   const handleSendMessage = (messageText: string) => {
     const formattedText = encodeURIComponent(messageText);
-    const whatsappUrl = `https://wa.me/${CONTACT_INFO.whatsapp}?text=${formattedText}`;
+    const whatsappUrl = `https://wa.me/${contactInfo.whatsapp}?text=${formattedText}`;
     window.open(whatsappUrl, '_blank');
     setIsOpen(false);
   };

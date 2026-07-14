@@ -1,8 +1,10 @@
 import React from 'react';
 import { Mail, Clock, Sparkles } from 'lucide-react';
-import { CONTACT_INFO } from '../data';
+import { usePublicData } from '../context/PublicDataContext';
 
 export default function Contacto() {
+  const { contactInfo } = usePublicData();
+
   return (
     <div className="bg-[#fff8f5] py-12" id="contacto-view-root">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,7 +46,7 @@ export default function Contacto() {
             
             <div className="space-y-4 pt-2">
               <a
-                href={`https://wa.me/${CONTACT_INFO.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría agendar una cita de fitting y conversar sobre un diseño personalizado para el Carnaval.')}`}
+                href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría agendar una cita de fitting y conversar sobre un diseño personalizado para el Carnaval.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full h-14 bg-[#25d366] hover:bg-[#20ba5a] text-white font-bold text-sm uppercase tracking-widest rounded-full shadow-lg flex items-center justify-center space-x-3 transition-all cursor-pointer transform hover:-translate-y-0.5 active:scale-95"
@@ -59,7 +61,7 @@ export default function Contacto() {
 
             <div className="border-t border-white/10 pt-6 space-y-4 text-sm text-white/90">
               <a
-                href={`https://wa.me/${CONTACT_INFO.whatsapp}`}
+                href={`https://wa.me/${contactInfo.whatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-start space-x-3 group cursor-pointer hover:text-[#fdc003] transition-colors"
@@ -69,7 +71,7 @@ export default function Contacto() {
                 </svg>
                 <div>
                   <p className="font-semibold text-white group-hover:underline">WhatsApp Directo</p>
-                  <p className="text-white/70">{CONTACT_INFO.phone}</p>
+                  <p className="text-white/70">{contactInfo.phone}</p>
                 </div>
               </a>
 
@@ -77,7 +79,7 @@ export default function Contacto() {
                 <Mail className="h-5 w-5 text-[#fdc003] shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-white">Correo Electrónico (Respaldo)</p>
-                  <p className="text-white/70 break-all">{CONTACT_INFO.email}</p>
+                  <p className="text-white/70 break-all">{contactInfo.email}</p>
                 </div>
               </div>
             </div>
@@ -88,7 +90,7 @@ export default function Contacto() {
                 <span>Horario de Atención</span>
               </h4>
               <div className="grid grid-cols-2 gap-4 text-xs text-white/75">
-                {CONTACT_INFO.workingHours.map((schedule, idx) => (
+                {contactInfo.workingHours.map((schedule, idx) => (
                   <div key={idx} className="space-y-0.5">
                     <p className="font-semibold text-white">{schedule.days}</p>
                     <p className="text-[10px] text-white/50">{schedule.hours}</p>

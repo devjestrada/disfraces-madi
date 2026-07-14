@@ -1,12 +1,13 @@
 import React from 'react';
 import { Scissors, ShoppingBag, Clock3, Sparkles, Calendar, CheckCircle } from 'lucide-react';
-import { CONTACT_INFO } from '../data';
+import { usePublicData } from '../context/PublicDataContext';
 
 interface ServiciosProps {
   onNavigate: (view: string) => void;
 }
 
 export default function Servicios({ onNavigate }: ServiciosProps) {
+  const { contactInfo } = usePublicData();
   const coreServices = [
     {
       icon: <Clock3 className="h-8 w-8 text-[#fdc003]" />,
@@ -121,7 +122,7 @@ export default function Servicios({ onNavigate }: ServiciosProps) {
               <div className="border-t border-[#a8001a]/10 pt-4 flex items-center justify-between">
                 <span className="text-xs font-bold text-[#1e1b18]/45 uppercase font-mono">Tarifas</span>
                 <a
-                  href={`https://wa.me/${CONTACT_INFO.whatsapp}?text=${encodeURIComponent(`Hola Sra. Madi, me gustaría consultar tarifas y disponibilidad para el servicio de: "${service.title}".`)}`}
+                  href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent(`Hola Sra. Madi, me gustaría consultar tarifas y disponibilidad para el servicio de: "${service.title}".`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-[#25d366]/10 hover:bg-[#25d366]/20 text-[#128c7e] text-xs font-bold px-3 py-1.5 rounded-lg font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -179,7 +180,7 @@ export default function Servicios({ onNavigate }: ServiciosProps) {
           </p>
           <div className="pt-2">
             <a
-              href={`https://wa.me/${CONTACT_INFO.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial en la boutique.')}`}
+              href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial en la boutique.')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="px-8 py-3.5 bg-[#25d366] hover:bg-[#20ba5a] text-white font-bold text-sm tracking-wider uppercase rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer inline-flex items-center space-x-2.5"

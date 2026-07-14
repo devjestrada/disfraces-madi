@@ -15,9 +15,11 @@ import NuestraHistoria from './views/NuestraHistoria';
 import Contacto from './views/Contacto';
 
 // Helpers and types
-import { COSTUMES } from './data';
+import useCostumes from './hooks/useCostumes';
+import { PublicDataProvider } from './context/PublicDataContext';
 
 export default function App() {
+  const { costumes } = useCostumes();
   const [currentView, setCurrentView] = useState<string>('inicio');
   const [selectedCostumeId, setSelectedCostumeId] = useState<string>('');
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -55,9 +57,10 @@ export default function App() {
     localStorage.setItem('madi_favorites', JSON.stringify(updated));
   };
 
-  const activeCostumeForWhatsApp = selectedCostumeId
-    ? COSTUMES.find((c) => c.id === selectedCostumeId)?.name
+  const activeCostume = selectedCostumeId
+    ? costumes.find((c) => c.id === selectedCostumeId)
     : undefined;
+  const activeCostumeForWhatsApp = activeCostume?.name;
 
   const renderCurrentView = () => {
     switch (currentView) {
@@ -75,11 +78,13 @@ export default function App() {
             onNavigate={handleNavigate}
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
+            costumes={costumes}
           />
         );
       case 'catalogo-detail':
         return (
           <CatalogoDetail
+            costumeProp={activeCostume}
             costumeId={selectedCostumeId}
             onNavigate={handleNavigate}
             favorites={favorites}
@@ -104,14 +109,15 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#fff8f5]" id="app-root-layout">
-      <Navbar
-        currentView={currentView}
-        onNavigate={handleNavigate}
-        favoritesCount={favorites.length}
-      />
+    <PublicDataProvider>
+      <div className="flex flex-col min-h-screen bg-[#fff8f5]" id="app-root-layout">
+        <Navbar
+          currentView={currentView}
+          onNavigate={handleNavigate}
+          favoritesCount={favorites.length}
+        />
 
-      <main className="flex-grow" id="main-content-flow">
+        <main className="flex-grow" id="main-content-flow">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView + (selectedCostumeId || '')}
@@ -130,5 +136,6 @@ export default function App() {
 
       <WhatsAppButton selectedCostumeName={activeCostumeForWhatsApp} />
     </div>
+    </PublicDataProvider>
   );
 }
