@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Heart, Shield, Sparkles, Ruler, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Heart, Sparkles, Ruler, CheckCircle, ArrowLeft } from 'lucide-react';
 import { COSTUMES, CONTACT_INFO } from '../data';
 
 interface CatalogoDetailProps {
@@ -111,22 +111,6 @@ export default function CatalogoDetail({ costumeId, onNavigate, favorites, onTog
             
             {/* Header metadata */}
             <div className="space-y-3">
-              <div className="flex items-center space-x-3 text-xs sm:text-sm text-[#1e1b18]/60 font-medium">
-                <div className="flex items-center text-[#fdc003]">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${
-                        i < Math.floor(costume.rating) ? 'fill-[#fdc003]' : ''
-                      } text-[#fdc003]`}
-                    />
-                  ))}
-                </div>
-                <span className="font-bold text-[#1e1b18]">{costume.rating}</span>
-                <span>•</span>
-                <span className="font-mono text-[#a8001a]">{costume.reviewsCount} Calificaciones</span>
-              </div>
-
               <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-[#1e1b18]">
                 {costume.name}
               </h1>
@@ -147,7 +131,7 @@ export default function CatalogoDetail({ costumeId, onNavigate, favorites, onTog
                     Precios adaptados a tu presupuesto, conversemos en tu visita
                   </p>
                   <p className="text-xs text-[#1e1b18]/70 leading-relaxed font-sans">
-                    En Atelier Madi creemos en la inclusión y accesibilidad de la tradición del Carnaval. El alquiler de cada pieza se acuerda de manera individualizada durante tu visita de prueba presencial de fitting, adaptándonos de forma positiva y profesional a tus necesidades y recursos.
+                    En Disfraces Madi creemos en la inclusión y accesibilidad de la tradición del Carnaval. El alquiler de cada pieza se acuerda de manera individualizada durante tu visita de prueba presencial de fitting, adaptándonos de forma positiva y profesional a tus necesidades y recursos.
                   </p>
                 </div>
                 <div className="pt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#846524] font-bold font-mono uppercase">
@@ -270,15 +254,6 @@ export default function CatalogoDetail({ costumeId, onNavigate, favorites, onTog
                     {size}
                   </button>
                 ))}
-              </div>
-            </div>
-
-            {/* Guarantee Badge */}
-            <div className="flex items-start space-x-3 bg-green-50 border border-green-200 p-4 rounded-2xl text-xs text-green-800 font-medium leading-relaxed">
-              <Shield className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold">Proceso Higiénico Certificado</p>
-                <p className="text-green-700/90 mt-0.5">Sometemos cada prenda a lavado quirúrgico hipoalergénico a vapor antes y después de cada entrega. ¡Tu bienestar y comodidad total en carnaval están 100% cubiertos!</p>
               </div>
             </div>
 

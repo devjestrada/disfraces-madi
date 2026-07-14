@@ -156,3 +156,13 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
   - `docs: ...` para cambios de documentación.
   - `refactor: ...` para refactorizaciones sin cambio funcional.
   - `perf: ...` para mejoras de rendimiento.
+
+## Manejo de specs de modificaciones
+
+- Las specs de modificaciones (como `spec-*.md`) se encuentran en la carpeta `docs/specs/`.
+- Al implementar completamente una spec (todos sus puntos aplicados y verificados en el código), el agente debe:
+  1. Confirmar que todos los cambios listados en la spec fueron aplicados correctamente.
+  2. Mover el archivo de la spec a la carpeta `docs/specs_done/` (crear la carpeta si no existe).
+  3. Si algún punto de la spec no pudo aplicarse (por ejemplo, texto "Actual" no encontrado exactamente), dejar constancia de ello en un comentario al final del archivo antes de moverlo, indicando qué se aplicó al texto equivalente más cercano.
+  4. No mover specs parcialmente implementadas: solo se mueven a `docs/specs_done/` cuando el 100% de los puntos fue resuelto (aplicado o reportado explícitamente como no encontrado).
+- Nomenclatura sugerida al mover: mantener el nombre original del archivo, sin renombrar, para preservar trazabilidad.

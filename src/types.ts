@@ -1,7 +1,7 @@
 export interface Costume {
   id: string;
   name: string;
-  category: 'Tradicional' | 'Fantasía' | 'Comparsa' | 'Infantil';
+  category: 'Cumbia' | 'Garabato' | 'Mapalé' | 'Marimonda' | 'Negrita Puloy' | 'Congo' | 'Monocuco' | 'Muerte' | 'Fantasía';
   rating: number;
   reviewsCount: number;
   description: string;

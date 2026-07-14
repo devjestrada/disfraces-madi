@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, Sparkles, Star, Quote, Award, Calendar, Heart, ShieldAlert } from 'lucide-react';
+import { Compass, Sparkles, Quote, Award, Calendar, Heart } from 'lucide-react';
 import { ASSETS, STATS } from '../data';
 
 interface NuestraHistoriaProps {
@@ -7,29 +7,7 @@ interface NuestraHistoriaProps {
 }
 
 export default function NuestraHistoria({ onNavigate }: NuestraHistoriaProps) {
-  const timelineEvents = [
-    {
-      year: '1991',
-      title: 'El Primer Hilo',
-      desc: 'Sra. Madi abre un humilde taller de costura en Barrio Abajo, cosiendo polleras sencillas de cuadros rojos para sus sobrinas y vecinas.'
-    },
-    {
-      year: '2003',
-      title: 'Reconocimiento Folclórico',
-      desc: 'Nuestros diseños ganan por primera vez el premio a "Mejor Vestuario Tradicional" en la Gran Parada de Tradición de la Vía 40.'
-    },
-    {
-      year: '2012',
-      title: 'Nueva Boutique Alto Prado',
-      desc: 'Nos mudamos a nuestra sede actual en Alto Prado, expandiendo la capacidad para albergar más de 1,000 trajes históricos de catálogo.'
-    },
-    {
-      year: '2020',
-      title: 'Patrimonio Protegido',
-      desc: 'Iniciamos el programa de conservación y restauración de piezas textiles antiguas para salvaguardar las técnicas de costura en desuso.'
-    }
-  ];
-
+  
   const coreValues = [
     {
       icon: <Award className="h-6 w-6 text-[#fdc003]" />,
@@ -59,10 +37,10 @@ export default function NuestraHistoria({ onNavigate }: NuestraHistoriaProps) {
             Herencia de Carnaval
           </span>
           <h1 className="font-serif text-3xl sm:text-5xl font-bold text-[#1e1b18]">
-            La Sra. Madi y su Legado
+            La Sra. Madi: Nuestra Alma
           </h1>
           <p className="text-sm sm:text-base text-[#1e1b18]/70 font-sans">
-            Una historia tejida con hilos de oro, lentejuelas, y la pasión inquebrantable de tres generaciones dedicadas a vestir los corazones del Carnaval de Barranquilla.
+            Más que un taller, somos el latido de una tradición que se viste de gala en cada Batalla de Flores.
           </p>
         </div>
 
@@ -72,22 +50,22 @@ export default function NuestraHistoria({ onNavigate }: NuestraHistoriaProps) {
           {/* Sra Madi Narrative (7cols) */}
           <div className="lg:col-span-7 space-y-6" id="legacy-narrative">
             <div className="inline-flex items-center space-x-2 bg-[#a8001a]/10 text-[#a8001a] px-3 py-1 rounded-full text-xs font-semibold font-mono">
-              <span>DESDE 1991 EN BARRANQUILLA</span>
+              <span>DESDE 2012 EN BARRANQUILLA</span>
             </div>
             
             <h2 className="font-serif text-2xl sm:text-4xl font-bold text-[#1e1b18]">
-              Nuestras Raíces: De Barrio Abajo al Alto Prado
+              Herencia de Carnaval
             </h2>
             
             <div className="space-y-4 text-sm sm:text-base text-[#1e1b18]/80 leading-relaxed font-sans">
               <p>
-                Sra. Madi creció mecida por los acordes de la flauta de millo y las risas de las tejedoras en los patios de Barrio Abajo. Desde pequeña, observaba con fascinación cómo las abuelas transformaban retazos de algodón rústico en las majestuosas polleras que inundaban las calles cada febrero.
+                El nombre Madi es un homenaje a Margarita, nuestra fundadora y madre de Diana. Desde niña, Diana vivió el carnaval en carne propia: fue bailarina y reina en incontables eventos de folclor, siempre acompañada por Margarita y toda la familia, quienes la apoyaron en cada paso.
               </p>
               <p>
-                En 1991, convencida de que el patrimonio de Barranquilla merecía ser vestido con la suntuosidad de la alta costura europea pero sin perder el sudor y el gozo de la calle, adquirió su primera máquina de coser Singer manual. Así nació el Taller Madi.
+                Hoy, cada diseño que nace de Disfraces Madi lleva ese sello familiar: raíces profundamente barranquilleras, vestidas con una mirada moderna. No copiamos el folclor, lo reinventamos — con respeto, con memoria y con corazón.
               </p>
               <p>
-                Con el paso de los años, lo que inició como un servicio íntimo de costura familiar se convirtió en el punto de encuentro obligatorio de Reinas de comparsas, bailarines dedicados y embajadores culturales de Colombia en el extranjero. Hoy, Disfraces Madi combina esa tradición intacta con una infraestructura moderna de lavado clínico, sastrería express y reservas virtuales.
+                Por eso, cuando alquilas con nosotras, no solo llevas un disfraz. Llevas una historia de familia, de tradición y de cariño hecho diseño.
               </p>
             </div>
 
@@ -116,8 +94,8 @@ export default function NuestraHistoria({ onNavigate }: NuestraHistoriaProps) {
                 referrerPolicy="no-referrer"
               />
               <div className="pt-4 text-center">
-                <h4 className="font-serif font-bold text-sm text-[#1e1b18]">Atelier de Alta Costura Madi</h4>
-                <p className="text-[11px] text-[#1e1b18]/50 mt-0.5">Sede Alto Prado, Barranquilla</p>
+                <h4 className="font-serif font-bold text-sm text-[#1e1b18]">Alquiler de Disfraces Madi</h4>
+                <p className="text-[11px] text-[#1e1b18]/50 mt-0.5">en Barranquilla</p>
               </div>
             </div>
           </div>
@@ -128,7 +106,7 @@ export default function NuestraHistoria({ onNavigate }: NuestraHistoriaProps) {
         <div className="space-y-6 mb-24" id="values-section">
           <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
             <span className="text-xs font-bold uppercase font-mono text-[#a8001a]">★ VALORES ★</span>
-            <h3 className="font-serif text-xl sm:text-3xl font-bold text-[#1e1b18]">Los Hilos que Guían Nuestra Aguja</h3>
+            <h3 className="font-serif text-xl sm:text-3xl font-bold text-[#1e1b18]">Los Hilos que Guían Nuestro Diseño</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8" id="values-grid">
@@ -143,38 +121,6 @@ export default function NuestraHistoria({ onNavigate }: NuestraHistoriaProps) {
                 </div>
                 <h4 className="font-serif font-bold text-sm sm:text-lg text-[#1e1b18]">{val.title}</h4>
                 <p className="text-xs sm:text-sm text-[#1e1b18]/70 leading-relaxed font-sans">{val.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 3. Interactive Timeline */}
-        <div className="bg-[#1e1b18] text-[#fff8f5] rounded-3xl p-8 md:p-16 mb-24" id="timeline-section">
-          <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
-            <span className="text-[#fdc003] text-xs font-bold uppercase tracking-widest font-mono">✦ HISTORIA EN HITOS ✦</span>
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold">Nuestra Trayectoria Folclórica</h3>
-            <p className="text-xs sm:text-sm text-[#fff8f5]/65">Un camino de perseverancia, puntadas cuidadosas y aplausos en el desfile.</p>
-          </div>
-
-          <div className="relative border-l border-white/10 ml-4 md:ml-32 space-y-12" id="timeline-container">
-            {timelineEvents.map((evt, idx) => (
-              <div key={idx} className="relative pl-8 md:pl-12 group" id={`timeline-event-${idx}`}>
-                {/* Year tag for large screens */}
-                <span className="hidden md:block absolute left-[-8rem] top-1.5 font-serif font-bold text-2xl text-[#fdc003] w-24 text-right">
-                  {evt.year}
-                </span>
-
-                {/* Point indicator */}
-                <span className="absolute left-[-5px] top-3.5 h-2.5 w-2.5 bg-[#fdc003] rounded-full ring-4 ring-[#1e1b18] group-hover:scale-125 transition-transform"></span>
-
-                {/* Event Card */}
-                <div className="space-y-1.5">
-                  <span className="md:hidden inline-block font-mono font-bold text-sm text-[#fdc003] bg-white/10 px-2 py-0.5 rounded-md mb-2">
-                    {evt.year}
-                  </span>
-                  <h4 className="font-serif text-lg font-bold text-white group-hover:text-[#fdc003] transition-colors">{evt.title}</h4>
-                  <p className="text-xs sm:text-sm text-[#fff8f5]/70 leading-relaxed max-w-2xl font-sans">{evt.desc}</p>
-                </div>
               </div>
             ))}
           </div>

@@ -12,33 +12,33 @@ interface InicioProps {
 export default function Inicio({ onNavigate, onToggleFavorite, favorites }: InicioProps) {
   const categories = [
     {
-      id: 'Tradicional',
-      name: 'Polleras y Tradición',
-      desc: 'Cumbia, Congo, Garabato y Mapalé de alta costura.',
+      id: 'Cumbia',
+      name: 'Cumbia',
+      desc: 'Polleras majestuosas y ritmo eterno para bailar con orgullo.',
       img: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=800&q=80',
-      badge: 'Patrimonio'
+      badge: 'Cumbia'
     },
     {
       id: 'Fantasía',
-      name: 'Trajes de Fantasía',
-      desc: 'Brillo deslumbrante, lentejuelas, pedrería y tocados reales.',
+      name: 'Fantasía',
+      desc: 'Trajes de ensueño que brillan en cada desfile y coronación.',
       img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80',
-      badge: 'Brillo'
+      badge: 'Fantasía'
     },
     {
-      id: 'Comparsa',
-      name: 'Comparsas y Disfraces',
-      desc: 'Marimondas de Barrio Abajo, Monocucos, Joselito y más.',
+      id: 'Mapalé',
+      name: 'Mapalé',
+      desc: 'Fuerza ancestral y movimiento intenso con cada pisada.',
       img: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
-      badge: 'Fiesta'
+      badge: 'Mapalé'
     },
     {
-      id: 'Infantil',
-      name: 'Semilleros de Carnaval',
-      desc: 'Divertidos y cómodos trajes a escala para los más pequeños.',
-      img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
-      badge: 'Infantil'
-    },
+      id: 'Garabato',
+      name: 'Garabato',
+      desc: 'Elegancia ancestral que encarna la danza del duelo y su espíritu.',
+      img: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=800&q=80',
+      badge: 'Garabato'
+    }
   ];
 
   return (
@@ -150,7 +150,7 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
             Categorías Destacadas
           </h2>
           <p className="text-sm sm:text-base text-[#1e1b18]/70 font-sans">
-            Cada danza del Carnaval de Barranquilla cuenta una historia diferente. Escoge la comparsa o tradición en la que deseas lucir imponente.
+            Cada danza del Carnaval de Barranquilla cuenta una historia diferente. Escoge la categoría de disfraz en la que deseas lucir imponente.
           </p>
         </div>
 
@@ -218,7 +218,7 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
                 ✦ HISTORIA VIVA ✦
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
-                El Corazón de Madi: Alta Costura para el Patrimonio
+                El Corazón de Madi: Diseños que honran al Patrimonio
               </h2>
               <p className="text-base sm:text-lg text-[#fff8f5]/80 leading-relaxed font-sans">
                 Detrás de cada majestuoso vestido y cada alegre pollera de nuestra tienda, se encuentra la maestría y herencia de la Sra. Madi. Junto a su equipo de artesanas costeñas, selecciona telas exclusivas, encajes finos y diseña a medida las ilusiones de bailarinas, reinas de comparsa y amantes del Carnaval.
@@ -247,54 +247,56 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
       </section>
 
       {/* 5. Our Queens (Reviews / Testimonials) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" id="testimonials-section">
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <span className="text-[#a8001a] text-xs font-bold uppercase tracking-widest font-mono">
-            ★ TESTIMONIOS ★
-          </span>
-          <h2 className="font-serif text-3xl md:text-5xl font-bold text-[#1e1b18]">
-            El Brillo de Nuestras Reinas
-          </h2>
-          <p className="text-sm sm:text-base text-[#1e1b18]/70 font-sans">
-            La mejor prueba de nuestra pasión es el regocijo de quienes visten nuestros diseños en el bordillo de la Vía 40.
-          </p>
-        </div>
+      {false && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" id="testimonials-section">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
+            <span className="text-[#a8001a] text-xs font-bold uppercase tracking-widest font-mono">
+              ★ TESTIMONIOS ★
+            </span>
+            <h2 className="font-serif text-3xl md:text-5xl font-bold text-[#1e1b18]">
+              El Brillo de Nuestras Reinas y Reyes
+            </h2>
+            <p className="text-sm sm:text-base text-[#1e1b18]/70 font-sans">
+              La mejor prueba de nuestra pasión es el regocijo de quienes visten nuestros diseños en cada evento de Carnaval, desde el Palco hasta el Bordillo.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8" id="testimonials-grid">
-          {REVIEWS.map((review) => (
-            <div
-              key={review.id}
-              className="bg-white p-8 rounded-3xl border border-[#a8001a]/10 hover:border-[#a8001a]/30 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between"
-              id={`testimonial-card-${review.id}`}
-            >
-              <div className="space-y-4">
-                <div className="flex items-center space-x-1 text-[#fdc003]">
-                  {[...Array(review.rating)].map((_, i) => (
-                    <Star key={i} className="h-4.5 w-4.5 fill-[#fdc003] text-[#fdc003]" />
-                  ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8" id="testimonials-grid">
+            {REVIEWS.map((review) => (
+              <div
+                key={review.id}
+                className="bg-white p-8 rounded-3xl border border-[#a8001a]/10 hover:border-[#a8001a]/30 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between"
+                id={`testimonial-card-${review.id}`}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-1 text-[#fdc003]">
+                    {[...Array(review.rating)].map((_, i) => (
+                      <Star key={i} className="h-4.5 w-4.5 fill-[#fdc003] text-[#fdc003]" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-[#1e1b18]/85 italic leading-relaxed font-sans">
+                    "{review.comment}"
+                  </p>
                 </div>
-                <p className="text-sm text-[#1e1b18]/85 italic leading-relaxed font-sans">
-                  "{review.comment}"
-                </p>
-              </div>
-              
-              <div className="flex items-center space-x-4 pt-6 border-t border-[#a8001a]/10 mt-6">
-                <img
-                  src={review.avatar}
-                  alt={review.author}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-[#a8001a]/20"
-                  referrerPolicy="no-referrer"
-                />
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#1e1b18]">{review.author}</h4>
-                  <p className="text-[11px] font-mono font-bold text-[#a8001a] uppercase">{review.role}</p>
-                  <p className="text-[10px] text-[#1e1b18]/50 mt-0.5">{review.date}</p>
+                
+                <div className="flex items-center space-x-4 pt-6 border-t border-[#a8001a]/10 mt-6">
+                  <img
+                    src={review.avatar}
+                    alt={review.author}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-[#a8001a]/20"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div>
+                    <h4 className="font-serif font-bold text-sm text-[#1e1b18]">{review.author}</h4>
+                    <p className="text-[11px] font-mono font-bold text-[#a8001a] uppercase">{review.role}</p>
+                    <p className="text-[10px] text-[#1e1b18]/50 mt-0.5">{review.date}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 6. Guarantee Banner */}
       <section className="bg-gradient-to-br from-[#fff8f5] to-[#fce3da] border-y border-[#a8001a]/10 py-16" id="guarantee-section">
@@ -304,7 +306,7 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
             Tu Tranquilidad es Nuestra Prioridad
           </h3>
           <p className="text-sm sm:text-base text-[#1e1b18]/75 max-w-2xl mx-auto font-sans leading-relaxed">
-            Cada traje alquilado pasa por un estricto proceso de tintorería quirúrgica, desinfección y planchado profesional. Ajustamos el vestido a tu talle perfecto con sastrería dedicada incluida en el valor del alquiler.
+            Cada traje alquilado pasa por un estricto proceso de lavado y retoque profesional.
           </p>
           <div className="pt-2">
             <button
@@ -325,7 +327,7 @@ export default function Inicio({ onNavigate, onToggleFavorite, favorites }: Inic
         </div>
         <div className="max-w-4xl mx-auto px-4 text-center space-y-6 relative z-10">
           <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">
-            ¿Listo para brillar en la Vía 40?
+            ¿Listo para brillar en tu evento de Carnaval?
           </h2>
           <p className="text-base text-white/80 max-w-xl mx-auto font-sans">
             Visítanos en nuestra boutique presencial, agenda tu cita de fitting o escríbenos directamente para cotizar tu diseño artesanal.
