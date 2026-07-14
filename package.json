@@ -1,7 +1,7 @@
 {
   "name": "disfraces-madi",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Sitio para el alquiler de disfraces del Carnaval de Barranquilla.",
   "author": "Jorge Estrada",
   "license": "MIT",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
+    "@supabase/supabase-js": "^2.33.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",
