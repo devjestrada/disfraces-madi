@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Menu, X, Heart, Sparkles } from 'lucide-react';
+import { Menu, X, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import logoDisfracesMadi from '../assets/images/logo_disfraces_madi.png';
 
 interface NavbarProps {
   currentView: string;
@@ -33,8 +34,12 @@ export default function Navbar({ currentView, onNavigate, favoritesCount }: Navb
             onClick={() => handleNavClick('inicio')}
             id="navbar-logo-container"
           >
-            <div className="bg-[#a8001a] text-white p-2 rounded-full shadow-md group-hover:scale-105 transition-transform duration-300">
-              <Sparkles className="h-6 w-6 text-[#fdc003]" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#a8001a] text-white shadow-md group-hover:scale-105 transition-transform duration-300">
+              <img
+                src={logoDisfracesMadi}
+                alt="Logo de Disfraces Madi"
+                className="h-10 w-10 object-contain"
+              />
             </div>
             <div>
               <span className="font-serif text-2xl md:text-3xl font-bold tracking-tight text-[#1e1b18] group-hover:text-[#a8001a] transition-colors">
