@@ -1,6 +1,7 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Clock, Sparkles, Heart } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Heart } from 'lucide-react';
 import { usePublicData } from '../context/PublicDataContext';
+import logoDisfracesMadi from '../assets/images/logo_disfraces_madi.png';
 
 interface FooterProps {
   onNavigate: (view: string) => void;
@@ -16,8 +17,12 @@ export default function Footer({ onNavigate }: FooterProps) {
           {/* Brand Column */}
           <div className="space-y-4" id="footer-brand-col">
             <div className="flex items-center space-x-2">
-              <div className="bg-[#a8001a] text-white p-2 rounded-full shadow-md">
-                <Sparkles className="h-5 w-5 text-[#fdc003]" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#a8001a] text-white shadow-md">
+                <img
+                  src={logoDisfracesMadi}
+                  alt="Logo de Disfraces Madi"
+                  className="h-9 w-9 object-contain"
+                />
               </div>
               <span className="font-serif text-2xl font-bold tracking-tight text-white">
                 Disfraces <span className="text-[#fdc003]">Madi</span>
