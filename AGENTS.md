@@ -159,7 +159,7 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
 
 ## Manejo de specs de modificaciones
 
-- Las specs de modificaciones (como `spec-*.md`) se encuentran en la carpeta `docs/specs/specs_backlog`.
+- Las specs de modificaciones (como `*.spec.md`) se encuentran en la carpeta `docs/specs/specs_backlog`.
 - Al implementar completamente una spec (todos sus puntos aplicados y verificados en el código), el agente debe:
   1. Confirmar que todos los cambios listados en la spec fueron aplicados correctamente.
   2. Mover el archivo de la spec a la carpeta `docs/specs/specs_done/` (crear la carpeta si no existe).
