@@ -16,6 +16,19 @@ export const supabase = createClient(
   }
 );
 
+export const supabaseAdmin = createClient(
+  supabaseUrl ?? '',
+  supabaseAnonKey ?? '',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: 'madi-admin-auth',
+    },
+  }
+);
+
 export function getPublicImageUrl(storagePath: string, bucket = 'costume-images') {
   if (!storagePath || !isSupabaseConfigured) {
     return storagePath;

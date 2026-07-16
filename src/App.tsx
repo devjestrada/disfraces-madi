@@ -13,6 +13,7 @@ import CatalogoDetail from './views/CatalogoDetail';
 import Servicios from './views/Servicios';
 import NuestraHistoria from './views/NuestraHistoria';
 import Contacto from './views/Contacto';
+import Admin from './views/Admin';
 
 // Helpers and types
 import useCostumes from './hooks/useCostumes';
@@ -31,6 +32,10 @@ export default function App() {
   const { costumes } = useCostumes(activeCatalogCategory);
 
   useEffect(() => {
+    if (window.location.hash === '#admin') {
+      setCurrentView('admin');
+    }
+
     const savedFavs = localStorage.getItem('madi_favorites');
     if (savedFavs) {
       try {
@@ -112,6 +117,8 @@ export default function App() {
         return <NuestraHistoria onNavigate={handleNavigate} />;
       case 'contacto':
         return <Contacto />;
+      case 'admin':
+        return <Admin />;
       default:
         return (
           <Inicio
