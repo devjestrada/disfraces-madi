@@ -1,34 +1,31 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Search, SlidersHorizontal, Heart, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
-import { Costume } from '../types';
+import { CatalogCategory, Costume } from '../types';
 import { COSTUMES } from '../data';
+import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
 
 interface CatalogoProps {
-  onNavigate: (view: string, costumeId?: string) => void;
+  onNavigate: (view: string, costumeId?: string, category?: CatalogCategory) => void;
   favorites: string[];
   onToggleFavorite: (id: string) => void;
   costumes: Costume[];
+  selectedCategory: CatalogCategory;
+  onCategoryChange: (category: CatalogCategory) => void;
 }
 
-type CategoryFilter = 'Todos' | 'Cumbia' | 'Garabato' | 'Mapalé' | 'Marimonda' | 'Negrita Puloy' | 'Congo' | 'Monocuco' | 'Muerte' | 'Fantasía';
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'rating-desc';
+const categoryOptions: CatalogCategory[] = ['Todos', 'Cumbia', 'Garabato', 'Mapalé', 'Marimonda', 'Negrita Puloy', 'Congo', 'Monocuco', 'Muerte', 'Fantasía'];
+const preferredSizeOrder = ['4', '6', '8', '10', '12', '14', '16', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
-export default function Catalogo({ onNavigate, favorites, onToggleFavorite, costumes }: CatalogoProps) {
+export default function Catalogo({ onNavigate, favorites, onToggleFavorite, costumes, selectedCategory, onCategoryChange }: CatalogoProps) {
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('Todos');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('default');
 
-  const costumesData = costumes.length > 0 ? costumes : COSTUMES;
+  const costumesData = costumes.length > 0 ? costumes : selectedCategory === 'Todos' ? COSTUMES : [];
   const { contactInfo } = usePublicData();
-
-  // List of sizes available for filtering
-  const childSizes = ['4', '6', '8', '10', '12', '14', '16'];
-  const adultSizes = ['XS', 'S', 'M', 'L', 'XL'];
-  const allSizes = [...childSizes, ...adultSizes];
 
   // Toggle size filter
   const handleSizeToggle = (size: string) => {
@@ -39,11 +36,9 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
     }
   };
 
-  // Filtered and Sorted costumes
-  const filteredCostumes = useMemo(() => {
+  const searchAndCategoryFilteredCostumes = useMemo(() => {
     let result = [...costumesData];
 
-    // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -55,19 +50,49 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
       );
     }
 
-    // Category
     if (selectedCategory !== 'Todos') {
       result = result.filter((c) => c.category === selectedCategory);
     }
 
+    return result;
+  }, [costumesData, searchQuery, selectedCategory]);
+
+  const availableSizePool = useMemo<string[]>(() => {
+    const sizes = Array.from(
+      new Set(searchAndCategoryFilteredCostumes.flatMap((costume) => costume.sizes))
+    ) as string[];
+
+    return sizes.sort((left, right) => {
+      const leftIndex = preferredSizeOrder.indexOf(left);
+      const rightIndex = preferredSizeOrder.indexOf(right);
+
+      if (leftIndex === -1 && rightIndex === -1) {
+        return left.localeCompare(right);
+      }
+
+      if (leftIndex === -1) {
+        return 1;
+      }
+
+      if (rightIndex === -1) {
+        return -1;
+      }
+
+      return leftIndex - rightIndex;
+    });
+  }, [searchAndCategoryFilteredCostumes]);
+
+  useEffect(() => {
+    setSelectedSizes((currentSizes) => currentSizes.filter((size) => availableSizePool.includes(size)));
+  }, [availableSizePool]);
+
+  // Filtered and Sorted costumes
+  const filteredCostumes = useMemo(() => {
+    let result = [...searchAndCategoryFilteredCostumes];
+
     // Sizes
     if (selectedSizes.length > 0) {
       result = result.filter((c) => c.sizes.some((size) => selectedSizes.includes(size)));
-    }
-
-    // Availability
-    if (onlyAvailable) {
-      result = result.filter((c) => c.isAvailable);
     }
 
     // Sorting
@@ -80,7 +105,37 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
     }
 
     return result;
-  }, [searchQuery, selectedCategory, selectedSizes, onlyAvailable, sortBy]);
+  }, [searchAndCategoryFilteredCostumes, selectedSizes, sortBy]);
+
+  const availableSizes = useMemo<string[]>(() => {
+    const sizeSource = selectedSizes.length > 0 && filteredCostumes.length > 0
+      ? filteredCostumes
+      : searchAndCategoryFilteredCostumes;
+
+    const sizes = Array.from(new Set(sizeSource.flatMap((costume) => costume.sizes))) as string[];
+
+    return sizes.sort((left, right) => {
+      const leftIndex = preferredSizeOrder.indexOf(left);
+      const rightIndex = preferredSizeOrder.indexOf(right);
+
+      if (leftIndex === -1 && rightIndex === -1) {
+        return left.localeCompare(right);
+      }
+
+      if (leftIndex === -1) {
+        return 1;
+      }
+
+      if (rightIndex === -1) {
+        return -1;
+      }
+
+      return leftIndex - rightIndex;
+    });
+  }, [filteredCostumes, searchAndCategoryFilteredCostumes, selectedSizes.length]);
+
+  const childSizes = availableSizes.filter((size) => /^\d+$/.test(size));
+  const adultSizes = availableSizes.filter((size) => !/^\d+$/.test(size));
 
   // Format price helper
   const formatCOP = (num: number) => {
@@ -93,9 +148,8 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
 
   const handleClearFilters = () => {
     setSearchQuery('');
-    setSelectedCategory('Todos');
+    onCategoryChange('Todos');
     setSelectedSizes([]);
-    setOnlyAvailable(false);
     setSortBy('default');
   };
 
@@ -158,10 +212,10 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
                 Categoría
               </label>
               <div className="space-y-1.5 flex flex-col">
-                {(['Todos', 'Cumbia', 'Garabato', 'Mapalé', 'Marimonda', 'Negrita Puloy', 'Congo', 'Monocuco', 'Muerte', 'Fantasía'] as CategoryFilter[]).map((cat) => (
+                {categoryOptions.map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => setSelectedCategory(cat)}
+                    onClick={() => onCategoryChange(cat)}
                     className={`text-left px-3 py-2 rounded-lg text-sm transition-all cursor-pointer ${
                       selectedCategory === cat
                         ? 'bg-[#a8001a]/10 text-[#a8001a] font-semibold border-l-3 border-[#a8001a]'
@@ -180,6 +234,7 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
                 Tallas Disponibles
               </label>
               <div className="space-y-3" id="sizes-filter-grid">
+                {childSizes.length > 0 && (
                 <div>
                   <p className="text-[11px] uppercase tracking-wider text-[#1e1b18]/70 font-semibold font-mono mb-2">Niños</p>
                   <div className="grid grid-cols-4 gap-2">
@@ -201,6 +256,8 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
                     })}
                   </div>
                 </div>
+                )}
+                {adultSizes.length > 0 && (
                 <div>
                   <p className="text-[11px] uppercase tracking-wider text-[#1e1b18]/70 font-semibold font-mono mb-2">Adultos</p>
                   <div className="grid grid-cols-5 gap-2">
@@ -222,27 +279,11 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
                     })}
                   </div>
                 </div>
+                )}
               </div>
             </div>
 
-            {/* 4. Availability Toggle */}
-            <div className="flex items-center justify-between py-2 border-t border-[#a8001a]/10">
-              <div className="flex flex-col">
-                <span className="text-xs font-bold text-[#1e1b18]/85 font-mono">Solo Disponibles</span>
-                <span className="text-[10px] text-[#1e1b18]/50">Alquiler inmediato</span>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={onlyAvailable}
-                  onChange={(e) => setOnlyAvailable(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#a8001a]"></div>
-              </label>
-            </div>
-
-            {/* 5. Sort Dropdown */}
+            {/* 4. Sort Dropdown */}
             <div className="space-y-2 border-t border-[#a8001a]/10 pt-4">
               <label className="text-xs font-bold text-[#1e1b18]/70 uppercase tracking-wide font-mono block">
                 Ordenar Por
@@ -290,9 +331,7 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
                 rel="noopener noreferrer"
                 className="bg-[#25d366] hover:bg-[#20ba5a] text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-sm"
               >
-                <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.965C16.486 1.98 14.007.953 11.39.953c-5.446 0-9.873 4.373-9.877 9.802-.001 1.83.49 3.61 1.42 5.176l-1.02 3.722 3.843-1.002zm12.246-7.394c-.33-.164-1.953-.964-2.253-1.074-.3-.109-.519-.164-.738.164-.219.329-.848 1.074-1.039 1.293-.19.22-.382.247-.712.082-.33-.164-1.393-.513-2.653-1.637-.98-.874-1.642-1.954-1.833-2.283-.19-.33-.02-.508.145-.671.149-.147.33-.384.495-.576.164-.191.219-.329.329-.548.11-.219.055-.411-.028-.576-.082-.164-.738-1.78-.1-2.438-.1-.247-.4-.329-.519-.164-.33-.082-.848-.274-1.177-.055-.329.219-1.286 1.26-1.286 3.07s1.314 3.56 1.496 3.807c.182.247 2.586 3.95 6.263 5.54.875.378 1.56.602 2.09.771.88.279 1.68.239 2.31.145.7-.104 1.953-.8 2.227-1.574.273-.774.273-1.438.191-1.574-.082-.136-.3-.219-.63-.383z"/>
-                </svg>
+                <WhatsAppIcon className="h-4 w-4 text-white" />
                 <span>Agendar por WhatsApp</span>
               </a>
             </div>

@@ -75,3 +75,6 @@ export interface SiteStats {
   costumesRented: string;
   happyHearts: string;
 }
+
+export type CostumeCategory = Costume['category'];
+export type CatalogCategory = 'Todos' | CostumeCategory;

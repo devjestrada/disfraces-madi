@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Menu, X, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import logoDisfracesMadi from '../assets/images/logo_disfraces_madi.png';
+import type { CatalogCategory } from '../types';
 
 interface NavbarProps {
   currentView: string;
-  onNavigate: (view: string, costumeId?: string) => void;
+  onNavigate: (view: string, costumeId?: string, category?: CatalogCategory) => void;
   favoritesCount: number;
 }
 
@@ -21,7 +22,11 @@ export default function Navbar({ currentView, onNavigate, favoritesCount }: Navb
   ];
 
   const handleNavClick = (viewId: string) => {
-    onNavigate(viewId);
+    if (viewId === 'catalogo') {
+      onNavigate(viewId, undefined, 'Todos');
+    } else {
+      onNavigate(viewId);
+    }
     setIsOpen(false);
   };
 
