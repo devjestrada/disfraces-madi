@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured, getPublicImageUrl } from '../lib/supabase';
-import { Costume, Review, SiteStats } from '../types';
+import { Costume, CostumeCategory, Review, SiteStats } from '../types';
 import { ASSETS, CONTACT_INFO, COSTUMES, REVIEWS, STATS } from '../data';
 
 function normalizeCostumeRecord(costume: any): Costume {
@@ -38,18 +38,34 @@ function normalizeSiteStatsRecord(stats: unknown): SiteStats {
   };
 }
 
-export async function fetchCostumesFull(): Promise<Costume[]> {
+export async function fetchCostumesFull(category?: CostumeCategory): Promise<Costume[]> {
   if (!isSupabaseConfigured) {
-    return [...COSTUMES];
+    return category
+      ? COSTUMES.filter((costume) => costume.category === category)
+      : [...COSTUMES];
   }
 
-  const { data, error } = await supabase.from('costumes_full').select('*');
+  let query = supabase.from('costumes_full').select('*');
+
+  if (category) {
+    query = query.eq('category', category);
+  }
+
+  const { data, error } = await query;
   if (error) {
     console.error('[Supabase] fetchCostumesFull error', error);
-    return [...COSTUMES];
+    return category
+      ? COSTUMES.filter((costume) => costume.category === category)
+      : [...COSTUMES];
   }
 
-  return Array.isArray(data) ? data.map(normalizeCostumeRecord) : [...COSTUMES];
+  if (!Array.isArray(data)) {
+    return category
+      ? COSTUMES.filter((costume) => costume.category === category)
+      : [...COSTUMES];
+  }
+
+  return data.map(normalizeCostumeRecord);
 }
 
 export async function fetchSiteStats(): Promise<SiteStats> {

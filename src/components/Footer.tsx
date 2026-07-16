@@ -2,9 +2,10 @@ import React from 'react';
 import { Mail, Phone, MapPin, Clock, Heart } from 'lucide-react';
 import { usePublicData } from '../context/PublicDataContext';
 import logoDisfracesMadi from '../assets/images/logo_disfraces_madi.png';
+import type { CatalogCategory } from '../types';
 
 interface FooterProps {
-  onNavigate: (view: string) => void;
+  onNavigate: (view: string, costumeId?: string, category?: CatalogCategory) => void;
 }
 
 export default function Footer({ onNavigate }: FooterProps) {
@@ -50,7 +51,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                 </button>
               </li>
               <li>
-                <button onClick={() => onNavigate('catalogo')} className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
+                <button onClick={() => onNavigate('catalogo', undefined, 'Todos')} className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
                   Explorar Catálogo
                 </button>
               </li>

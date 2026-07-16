@@ -1,7 +1,10 @@
 ## [Unreleased]
 
 ### Changed
-- Sin cambios aún.
+- Se dejó siempre visible el texto descriptivo de las categorías destacadas en Inicio.
+- La navegación desde las categorías destacadas ahora abre Catálogo con la categoría preaplicada y consulta filtrada desde Supabase.
+- El filtro "Solo Disponibles" fue retirado del Catálogo y las tallas visibles ahora se ajustan a los disfraces mostrados.
+- Los CTA y superficies de WhatsApp fueron estandarizados con un único icono compartido basado en `react-icons`.
 
 ## [0.1.0] - 2026-07-14
 

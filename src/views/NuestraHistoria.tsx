@@ -1,9 +1,10 @@
 import React from 'react';
 import { Compass, Sparkles, Quote, Award, Calendar, Heart } from 'lucide-react';
 import { ASSETS } from '../data';
+import type { CatalogCategory } from '../types';
 
 interface NuestraHistoriaProps {
-  onNavigate: (view: string) => void;
+  onNavigate: (view: string, costumeId?: string, category?: CatalogCategory) => void;
 }
 
 export default function NuestraHistoria({ onNavigate }: NuestraHistoriaProps) {
@@ -134,7 +135,7 @@ export default function NuestraHistoria({ onNavigate }: NuestraHistoriaProps) {
           </p>
           <div className="pt-2">
             <button
-              onClick={() => onNavigate('catalogo')}
+              onClick={() => onNavigate('catalogo', undefined, 'Todos')}
               className="px-8 py-3.5 bg-[#fdc003] hover:bg-[#fabd00] text-[#1e1b18] font-bold text-sm tracking-wider uppercase rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer inline-flex items-center space-x-2"
             >
               <span>🔍 Explorar Catálogo de Costura</span>

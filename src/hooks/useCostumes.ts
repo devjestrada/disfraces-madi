@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Costume } from '../types';
+import { Costume, CostumeCategory } from '../types';
 import { fetchCostumesFull } from '../services/dataService';
 
-export default function useCostumes() {
+export default function useCostumes(category?: CostumeCategory) {
   const [costumes, setCostumes] = useState<Costume[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -11,8 +11,11 @@ export default function useCostumes() {
     let isMounted = true;
 
     async function loadCostumes() {
+      setIsLoading(true);
+      setError(null);
+
       try {
-        const data = await fetchCostumesFull();
+        const data = await fetchCostumesFull(category);
         if (isMounted) {
           setCostumes(data);
         }
@@ -31,7 +34,7 @@ export default function useCostumes() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [category]);
 
   return { costumes, isLoading, error };
 }

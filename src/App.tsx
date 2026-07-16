@@ -17,12 +17,18 @@ import Contacto from './views/Contacto';
 // Helpers and types
 import useCostumes from './hooks/useCostumes';
 import { PublicDataProvider } from './context/PublicDataContext';
+import type { CatalogCategory } from './types';
 
 export default function App() {
-  const { costumes } = useCostumes();
   const [currentView, setCurrentView] = useState<string>('inicio');
   const [selectedCostumeId, setSelectedCostumeId] = useState<string>('');
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [catalogCategory, setCatalogCategory] = useState<CatalogCategory>('Todos');
+  const activeCatalogCategory =
+    (currentView === 'catalogo' || currentView === 'catalogo-detail') && catalogCategory !== 'Todos'
+      ? catalogCategory
+      : undefined;
+  const { costumes } = useCostumes(activeCatalogCategory);
 
   useEffect(() => {
     const savedFavs = localStorage.getItem('madi_favorites');
@@ -35,8 +41,15 @@ export default function App() {
     }
   }, []);
 
-  const handleNavigate = (viewId: string, costumeId?: string) => {
+  const handleNavigate = (viewId: string, costumeId?: string, category?: CatalogCategory) => {
     setCurrentView(viewId);
+
+    if (viewId === 'catalogo' && category) {
+      setCatalogCategory(category);
+    } else if (viewId !== 'catalogo-detail') {
+      setCatalogCategory('Todos');
+    }
+
     if (costumeId) {
       setSelectedCostumeId(costumeId);
     } else {
@@ -79,6 +92,8 @@ export default function App() {
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
             costumes={costumes}
+            selectedCategory={catalogCategory}
+            onCategoryChange={setCatalogCategory}
           />
         );
       case 'catalogo-detail':
