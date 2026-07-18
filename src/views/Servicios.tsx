@@ -13,8 +13,8 @@ export default function Servicios() {
       features: [
         'Prueba de talle guiada por asesores folclóricos.',
         'Sastrería express incluida en tu reserva para ajuste perfecto.',
-        'Sanitización profunda en seco para tu total bioseguridad.',
-        'Plazos cómodos de devolución de hasta 4 días hábiles.'
+        'Disfraces higienizados listos para su uso.',
+        'Plazos adecuados de devolución según tu conveniencia y sujeto a la temporada.'
       ]
     },
     {
@@ -54,7 +54,7 @@ export default function Servicios() {
     },
     {
       number: '03',
-      title: 'Recoge Tu Traje Sanitizado',
+      title: 'Recoge Tu Traje Higienizado y Listo',
       desc: 'Retira el traje en un estuche protector hermético, lavado, planchado y listo para lucir en los desfiles.'
     },
     {

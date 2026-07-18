@@ -1065,7 +1065,7 @@ export default function Admin() {
                 </label>
 
                 <label className="text-sm text-[#4A1F1F]">
-                  Disenadora
+                  Diseñadora
                   <select
                     value={form.designer_id}
                     onChange={(event) => handleFormField('designer_id', event.target.value)}

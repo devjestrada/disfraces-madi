@@ -2,6 +2,7 @@
 
 ### Changed
 - `App.tsx` ahora carga la vista `Admin` con `React.lazy()`/`Suspense` en vez de un import estático, sacando el panel administrativo (login, CRUD de disfraces, subida de imágenes) del bundle público inicial; queda en un chunk aparte (`Admin-*.js`, ~40KB) que solo se descarga al entrar a `/admin`.
+- Se corrigieron textos menores: tilde de "Diseñadora" en `Admin.tsx`, y el copy de sanitización/devoluciones en `Catalogo.tsx` y `Servicios.tsx` ahora usa "higienizado(s)" en vez de "sanitizado(s)" y suaviza el plazo de devolución.
 
 ## [0.4.2] - 2026-07-18
 
