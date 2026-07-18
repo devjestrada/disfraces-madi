@@ -12,18 +12,16 @@ El sitio debe seguir proyectando un tono cercano, exclusivo, artesanal y orienta
 
 ## 1. Directrices de Reglas de Negocio (¡MANDATORIO!)
 
-### 🚫 Prohibición Absoluta de Precios Públicos
-* **REGLA:** **NO** se deben publicar precios de alquiler, venta ni depósitos en ninguna parte de la aplicación (catálogo, fichas de detalle, inicio, formularios, etc.).
-* **Razón:** El alquiler se pacta de forma personalizada y humana durante la visita de fitting de cada cliente para adaptarse de forma inclusiva a sus recursos.
-* **Mensajes Autorizados:**
-  * *"Precios adaptados a tu presupuesto, conversemos en tu visita"*
-  * *"Agenda tu visita y encontremos juntas el disfraz ideal para ti"*
-  * *"A tu presupuesto"*
-  * *"Consultar en Cita Previa"*
-* **No usar nunca:**
-  * "Desde $..."
-  * tablas de precios
-  * referencias a costos o depósitos visibles en la UI
+### ✅ Publicación de Precios (Venta, Alquiler y Depósito)
+* **REGLA:** Se deben publicar los precios de **venta**, **alquiler** y **depósito** de cada disfraz en la aplicación (catálogo, ficha de detalle, inicio, formularios, etc.).
+* **Razón:** El negocio reconsideró la estrategia comercial y ahora prioriza la transparencia desde el primer contacto, para que la clienta conozca el valor antes de agendar su visita.
+* **Formato recomendado:**
+  * Mostrar los tres valores de forma clara, en pesos colombianos (COP): precio de alquiler, precio de venta (cuando aplique) y depósito.
+  * El depósito debe indicarse explícitamente como reembolsable, ej. *"Depósito reembolsable: $100.000"*.
+* **Mensajes complementarios (mantener el tono cercano, no reemplazan el precio):**
+  * *"Agenda tu visita y prueba tu disfraz antes de confirmar"*
+  * *"Consulta disponibilidad y agenda tu cita"*
+* **Nota de implementación:** el modelo de datos actual (`src/types.ts`) solo contempla `rentalPrice` y `salePrice`; falta agregar un campo de depósito (ej. `depositPrice`) antes de poder mostrarlo en la UI. Ese cambio de datos/UI es funcional y debe hacerse en una rama de código separada de esta actualización de documentación.
 
 ### 🚫 Prohibición de Direcciones Físicas Exactas e Integraciones de Mapas
 * **REGLA:** **NO** integres Google Maps, mapas interactivos vectoriales, ni reveles la dirección de calle exacta abiertamente en el sitio público.
@@ -52,7 +50,7 @@ El sitio debe seguir proyectando un tono cercano, exclusivo, artesanal y orienta
 
 Cada modificación debe revisarse con esta lista mínima:
 
-- [ ] No se muestran precios públicos en catálogo, ficha, inicio, formularios ni textos auxiliares.
+- [ ] Los precios de alquiler, venta (cuando aplique) y depósito están visibles y correctamente formateados en catálogo, ficha, inicio y formularios relevantes.
 - [ ] No se expone una dirección exacta ni se integra un mapa interactivo.
 - [ ] El botón de WhatsApp sigue visible, flotante y accesible.
 - [ ] El flujo de conversión sigue centrado en agendar cita para probarse un disfraz.
@@ -63,7 +61,7 @@ Cada modificación debe revisarse con esta lista mínima:
 
 ## 4. Arquitectura y Estructura de Código
 
-* **Estructura de Datos:** Las propiedades `rentalPrice` y `salePrice` permanecen en `src/types.ts` y `src/data.ts` únicamente para consistencia estructural histórica, pero **bajo ninguna circunstancia deben inyectarse en el renderizado de la UI**.
+* **Estructura de Datos:** Las propiedades `rentalPrice` y `salePrice` en `src/types.ts` y `src/data.ts` **sí deben inyectarse en el renderizado de la UI** (catálogo, ficha de detalle, etc.). Falta incorporar un campo de depósito (ej. `depositPrice`) al modelo de datos para completar la publicación de los tres valores.
 * **Propiedad `designer`:** Cada disfraz cuenta con un campo `designer` que debe desplegarse elegantemente en la ficha técnica (`CatalogoDetail.tsx`) para rendir tributo a la confección del Atelier.
 * **Stack tecnológico actual:**
   * Frontend: `React 19` + `TypeScript 5.8` + `Vite 6` para la aplicación SPA.
@@ -94,13 +92,14 @@ Cada modificación debe revisarse con esta lista mínima:
 ## 6. Ejemplos de Correcto vs Incorrecto
 
 ### Correcto
-* “Precios adaptados a tu presupuesto, conversemos en tu visita”
-* “Agenda tu visita y encontremos juntas el disfraz ideal para ti”
+* “Alquiler: $150.000”
+* “Venta: $280.000”
+* “Depósito reembolsable: $100.000”
+* “Agenda tu visita y prueba tu disfraz antes de confirmar”
 * “Visitas exclusivas con cita previa”
 
 ### Incorrecto
-* “Alquiler desde $150.000"
-* “Precio: $280.000"
+* “Precio: consultar” (ya no aplica: el precio debe mostrarse)
 * “Dirección: Calle X #Y-Z”
 * botones de WhatsApp genéricos o múltiples flujos dispersos
 
@@ -169,18 +168,22 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
 
 ### Flujo de trabajo por spec
 
-1. **Rama de trabajo:** Antes de iniciar la implementación de una spec, crear una nueva rama de tipo `feature` (ej. `feature/nombre-de-la-spec`).
-2. **Planeación:** Primero revisar la spec y generar un plan específico de implementación (qué archivos/componentes se van a modificar y cómo). Presentar este plan como resultado antes de escribir código.
-3. **Implementación:** Una vez aprobado o compartido el plan, proceder con la implementación de los cambios descritos en la spec.
-4. **Confirmación de cambios:** Al finalizar la implementación, preguntar al usuario si los cambios se aplicaron correctamente.
+1. **Apuntes iniciales:** El usuario agrega sus apuntes/ideas iniciales directamente en el archivo de la spec dentro de `docs/specs/specs_backlog`.
+2. **Redacción de la spec:** Cuando el usuario lo solicite, el agente redacta la spec de forma clara y correcta, editando el archivo.
+3. **Revisión de la spec:** El usuario revisa la redacción. El agente **no debe avanzar** a la planeación hasta que el usuario indique explícitamente que la revisión fue exitosa.
+4. **Rama de trabajo:** Antes de iniciar el plan de implementación, crear una nueva rama de tipo `feature` (ej. `feature/nombre-de-la-spec`).
+5. **Planeación:** Con la spec ya revisada y aprobada, generar un plan específico de implementación (qué archivos/componentes se van a modificar y cómo). Presentar este plan como resultado antes de escribir código.
+6. **Revisión del plan:** El usuario revisa el plan de implementación. El agente **no debe iniciar** la implementación hasta que el usuario esté de acuerdo con el plan.
+7. **Implementación:** Una vez aprobado el plan, proceder con la implementación de los cambios descritos en la spec.
+8. **Confirmación de cambios:** Al finalizar la implementación, preguntar al usuario si los cambios se aplicaron correctamente.
    - Si el usuario **confirma** que todo está correcto:
      a. Mover el archivo de la spec a la carpeta `docs/specs/specs_done/` (crear la carpeta si no existe).
      b. Subir (incrementar) la versión en `package.json`.
      c. Hacer commit de los cambios (incluyendo el movimiento de la spec y el bump de versión), subir (`push`) la rama `feature` al repositorio remoto y abrir el Pull Request correspondiente hacia la rama principal.
    - Si el usuario **no confirma** o reporta problemas, no mover la spec ni actualizar la versión; realizar los ajustes necesarios y volver a preguntar.
-5. **Reporte de excepciones:** Si algún punto de la spec no pudo aplicarse tal cual (por ejemplo, texto "Actual" no encontrado exactamente), dejar constancia de ello en un comentario al final del archivo de spec antes de moverlo, indicando qué se aplicó al texto equivalente más cercano.
-6. **Nomenclatura al mover:** Mantener el nombre original del archivo de spec, sin renombrar, para preservar trazabilidad.
-7. **Cierre de rama:** Una vez que el Pull Request de la spec sea aprobado y mergeado a la rama principal, borrar la rama `feature` correspondiente tanto en local (`git branch -d`) como en el remoto (`git push origin --delete`), para mantener el repositorio limpio. No borrar la rama si el PR aún no fue aprobado y mergeado.
+9. **Reporte de excepciones:** Si algún punto de la spec no pudo aplicarse tal cual (por ejemplo, texto "Actual" no encontrado exactamente), dejar constancia de ello en un comentario al final del archivo de spec antes de moverlo, indicando qué se aplicó al texto equivalente más cercano.
+10. **Nomenclatura al mover:** Mantener el nombre original del archivo de spec, sin renombrar, para preservar trazabilidad.
+11. **Cierre de rama:** Una vez que el Pull Request de la spec sea aprobado y mergeado a la rama principal, borrar la rama `feature` correspondiente tanto en local (`git branch -d`) como en el remoto (`git push origin --delete`), para mantener el repositorio limpio. No borrar la rama si el PR aún no fue aprobado y mergeado.
 
 ### Reglas adicionales
 
