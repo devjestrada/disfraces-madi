@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabaseAdmin } from '../lib/supabase';
+import Toast, { type ToastMessage, type ToastVariant } from '../components/Toast';
+import ConfirmDialog from '../components/ConfirmDialog';
 import type {
   AdminCategory,
   AdminContactInfo,
@@ -107,7 +109,10 @@ export default function Admin() {
   const [form, setForm] = useState<CostumeFormState>(EMPTY_FORM);
   const [isSavingCostume, setIsSavingCostume] = useState(false);
   const [isLoadingPanelData, setIsLoadingPanelData] = useState(false);
-  const [panelMessage, setPanelMessage] = useState('');
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [activeSection, setActiveSection] = useState<'disfraces' | 'configuracion'>('disfraces');
+  const [viewMode, setViewMode] = useState<'tabla' | 'lista' | 'galeria'>('lista');
   const [images, setImages] = useState<AdminCostumeImage[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
@@ -128,6 +133,10 @@ export default function Admin() {
   const [isSavingSiteConfig, setIsSavingSiteConfig] = useState(false);
   const [newAssetKey, setNewAssetKey] = useState('hero-banner');
   const [isUploadingSiteAsset, setIsUploadingSiteAsset] = useState(false);
+
+  const notify = (text: string, variant: ToastVariant = 'success') => setToast({ text, variant });
+  const notifyError = (error: unknown) =>
+    setToast({ text: error instanceof Error ? error.message : String(error), variant: 'error' });
 
   const userEmail = useMemo(() => session?.user?.email ?? '', [session]);
   const selectedCostume = useMemo(
@@ -206,7 +215,7 @@ export default function Admin() {
 
   const loadPanelData = async () => {
     setIsLoadingPanelData(true);
-    setPanelMessage('');
+    setToast(null);
     try {
       const { categories: loadedCategories, designers: loadedDesigners } =
         await fetchAdminLookups();
@@ -243,7 +252,7 @@ export default function Admin() {
         });
       }
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     } finally {
       setIsLoadingPanelData(false);
     }
@@ -266,7 +275,7 @@ export default function Admin() {
 
   const loadImages = async (costumeId: string) => {
     setIsLoadingImages(true);
-    setPanelMessage('');
+    setToast(null);
     try {
       const loadedImages = await fetchCostumeImages(costumeId);
       setImages(loadedImages);
@@ -276,7 +285,7 @@ export default function Admin() {
       });
       setAltDrafts(initialDrafts);
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
       setImages([]);
     } finally {
       setIsLoadingImages(false);
@@ -284,7 +293,7 @@ export default function Admin() {
   };
 
   const loadRelations = async (costumeId: string) => {
-    setPanelMessage('');
+    setToast(null);
     try {
       const relations = await fetchCostumeRelations(costumeId);
       setDetailsText(relations.details.map((item) => item.detail).join('\n'));
@@ -292,7 +301,7 @@ export default function Admin() {
       setSelectedAccessoryIds(relations.accessoryIds);
       setSelectedSizes(relations.sizes);
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
       setDetailsText('');
       setSelectedFabricIds([]);
       setSelectedAccessoryIds([]);
@@ -354,7 +363,7 @@ export default function Admin() {
     setSelectedFabricIds([]);
     setSelectedAccessoryIds([]);
     setSelectedSizes([]);
-    setPanelMessage('Creando nuevo disfraz. Completa el formulario y guarda.');
+    notify('Creando nuevo disfraz. Completa el formulario y guarda.', 'info');
   };
 
   const toggleSelection = (
@@ -372,37 +381,37 @@ export default function Admin() {
   };
 
   const handleCreateFabric = async () => {
-    setPanelMessage('');
+    setToast(null);
     try {
       const created = await createFabric(newFabricName);
       setFabrics((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
       setSelectedFabricIds((prev) => [...prev, created.id]);
       setNewFabricName('');
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     }
   };
 
   const handleCreateAccessory = async () => {
-    setPanelMessage('');
+    setToast(null);
     try {
       const created = await createAccessory(newAccessoryName);
       setAccessories((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
       setSelectedAccessoryIds((prev) => [...prev, created.id]);
       setNewAccessoryName('');
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     }
   };
 
   const handleSaveRelations = async () => {
     if (!selectedCostumeId) {
-      setPanelMessage('Primero guarda el disfraz para editar sus relaciones.');
+      notify('Primero guarda el disfraz para editar sus relaciones.', 'error');
       return;
     }
 
     setIsSavingRelations(true);
-    setPanelMessage('');
+    setToast(null);
     try {
       await saveCostumeRelations(selectedCostumeId, {
         details: detailsText
@@ -414,9 +423,9 @@ export default function Admin() {
         sizes: selectedSizes,
       });
       await loadRelations(selectedCostumeId);
-      setPanelMessage('Detalles, telas, accesorios y tallas actualizados.');
+      notify('Detalles, telas, accesorios y tallas actualizados.');
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     } finally {
       setIsSavingRelations(false);
     }
@@ -424,7 +433,7 @@ export default function Admin() {
 
   const handleSaveSiteConfig = async () => {
     setIsSavingSiteConfig(true);
-    setPanelMessage('');
+    setToast(null);
     try {
       await Promise.all([
         saveSiteStats(siteStats),
@@ -434,9 +443,9 @@ export default function Admin() {
 
       const config = await fetchSiteConfig();
       setSiteAssets(config.siteAssets);
-      setPanelMessage('Configuracion del sitio actualizada.');
+      notify('Configuracion del sitio actualizada.');
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     } finally {
       setIsSavingSiteConfig(false);
     }
@@ -467,14 +476,14 @@ export default function Admin() {
 
     const file = files[0];
     setIsUploadingSiteAsset(true);
-    setPanelMessage('');
+    setToast(null);
     try {
       await uploadSiteAsset(newAssetKey.trim(), file);
       const config = await fetchSiteConfig();
       setSiteAssets(config.siteAssets);
-      setPanelMessage('Asset institucional actualizado.');
+      notify('Asset institucional actualizado.');
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     } finally {
       setIsUploadingSiteAsset(false);
     }
@@ -493,7 +502,7 @@ export default function Admin() {
   const handleSaveCostume = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSavingCostume(true);
-    setPanelMessage('');
+    setToast(null);
 
     try {
       const payload = {
@@ -518,11 +527,11 @@ export default function Admin() {
 
       if (selectedCostumeId) {
         await updateCostume(selectedCostumeId, payload);
-        setPanelMessage('Disfraz actualizado correctamente.');
+        notify('Disfraz actualizado correctamente.');
       } else {
         const created = await createCostume(payload);
         setSelectedCostumeId(created.id);
-        setPanelMessage('Disfraz creado. Ya puedes gestionar su galeria.');
+        notify('Disfraz creado. Ya puedes gestionar su galeria.');
       }
 
       const refreshed = await fetchAdminCostumes();
@@ -534,38 +543,37 @@ export default function Admin() {
         }
       }
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     } finally {
       setIsSavingCostume(false);
     }
   };
 
-  const handleDeleteCostume = async () => {
+  const handleDeleteCostume = () => {
     if (!selectedCostumeId) {
       return;
     }
 
-    const confirmed = window.confirm(
-      'Se eliminara el disfraz y sus relaciones (detalles, tallas e imagenes). Deseas continuar?'
-    );
-    if (!confirmed) {
-      return;
-    }
-
-    setPanelMessage('');
-    try {
-      await deleteCostume(selectedCostumeId);
-      const refreshed = await fetchAdminCostumes();
-      setCostumes(refreshed);
-      if (refreshed.length > 0) {
-        hydrateFormFromCostume(refreshed[0]);
-      } else {
-        handleCreateNew();
-      }
-      setPanelMessage('Disfraz eliminado.');
-    } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
-    }
+    setConfirmState({
+      message: 'Se eliminara el disfraz y sus relaciones (detalles, tallas e imagenes). Deseas continuar?',
+      onConfirm: async () => {
+        setConfirmState(null);
+        setToast(null);
+        try {
+          await deleteCostume(selectedCostumeId);
+          const refreshed = await fetchAdminCostumes();
+          setCostumes(refreshed);
+          if (refreshed.length > 0) {
+            hydrateFormFromCostume(refreshed[0]);
+          } else {
+            handleCreateNew();
+          }
+          notify('Disfraz eliminado.');
+        } catch (error) {
+          notifyError(error);
+        }
+      },
+    });
   };
 
   const handleToggleFromList = async (
@@ -573,7 +581,7 @@ export default function Admin() {
     field: 'is_available' | 'featured'
   ) => {
     const nextValue = !costume[field];
-    setPanelMessage('');
+    setToast(null);
     try {
       await toggleCostumeFlag(costume.id, field, nextValue);
       setCostumes((prev) =>
@@ -585,7 +593,7 @@ export default function Admin() {
         setForm((prev) => ({ ...prev, [field]: nextValue }));
       }
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     }
   };
 
@@ -595,7 +603,7 @@ export default function Admin() {
     }
 
     setIsUploadingImages(true);
-    setPanelMessage('');
+    setToast(null);
 
     try {
       for (let i = 0; i < files.length; i += 1) {
@@ -604,9 +612,9 @@ export default function Admin() {
         });
       }
       await loadImages(selectedCostumeId);
-      setPanelMessage('Imagenes cargadas correctamente.');
+      notify('Imagenes cargadas correctamente.');
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     } finally {
       setIsUploadingImages(false);
     }
@@ -616,36 +624,36 @@ export default function Admin() {
     if (!selectedCostumeId) {
       return;
     }
-    setPanelMessage('');
+    setToast(null);
     try {
       await setPrimaryCostumeImage(selectedCostumeId, imageId);
       await loadImages(selectedCostumeId);
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     }
   };
 
   const handleDeleteImage = async (image: AdminCostumeImage) => {
-    setPanelMessage('');
+    setToast(null);
     try {
       await deleteCostumeImage(image);
       if (selectedCostumeId) {
         await loadImages(selectedCostumeId);
       }
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     }
   };
 
   const handleSaveAlt = async (image: AdminCostumeImage) => {
-    setPanelMessage('');
+    setToast(null);
     try {
       await updateCostumeImageAltText(image.id, altDrafts[image.id] ?? '');
       if (selectedCostumeId) {
         await loadImages(selectedCostumeId);
       }
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     }
   };
 
@@ -675,7 +683,7 @@ export default function Admin() {
       );
       await loadImages(selectedCostumeId);
     } catch (error) {
-      setPanelMessage(error instanceof Error ? error.message : String(error));
+      notifyError(error);
     }
   };
 
@@ -732,6 +740,13 @@ export default function Admin() {
 
   return (
     <section className="mx-auto w-full max-w-5xl px-4 py-10">
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        message={confirmState?.message ?? ''}
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
+
       <div className="mb-6 flex items-center justify-between rounded-2xl border border-[#E6D0C9] bg-white p-6 shadow-sm">
         <div>
           <h1 className="font-serif text-3xl text-[#4A1F1F]">Panel administrativo</h1>
@@ -762,76 +777,237 @@ export default function Admin() {
       ) : null}
 
       {adminState === 'granted' ? (
-        <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-          <aside className="rounded-2xl border border-[#E6D0C9] bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-serif text-xl text-[#4A1F1F]">Disfraces</h2>
+        <div className="space-y-6">
+          <div className="flex flex-wrap gap-2 rounded-2xl border border-[#E6D0C9] bg-white p-2 shadow-sm">
+            {(
+              [
+                { id: 'disfraces', label: 'Disfraces' },
+                { id: 'configuracion', label: 'Configuracion del sitio' },
+              ] as const
+            ).map((section) => (
               <button
-                onClick={handleCreateNew}
-                className="rounded-lg bg-[#A8001A] px-3 py-1.5 text-xs font-semibold text-white"
+                key={section.id}
+                onClick={() => setActiveSection(section.id)}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeSection === section.id
+                    ? 'bg-[#A8001A] text-white'
+                    : 'text-[#4A1F1F] hover:bg-[#FFF4F6]'
+                }`}
               >
-                Nuevo
+                {section.label}
               </button>
-            </div>
+            ))}
+          </div>
 
-            {isLoadingPanelData ? <p className="text-sm text-[#6E4B4B]">Cargando catalogo...</p> : null}
+          <Toast toast={toast} onDismiss={() => setToast(null)} />
 
-            <div className="max-h-[520px] space-y-3 overflow-auto pr-1">
-              {costumes.map((costume) => (
-                <article
-                  key={costume.id}
-                  className={`rounded-xl border p-3 ${
-                    costume.id === selectedCostumeId
-                      ? 'border-[#A8001A] bg-[#FFF4F6]'
-                      : 'border-[#E6D0C9] bg-white'
-                  }`}
-                >
-                  <button
-                    className="w-full text-left"
-                    onClick={() => hydrateFormFromCostume(costume)}
-                  >
-                    <h3 className="text-sm font-semibold text-[#4A1F1F]">{costume.name}</h3>
-                    <p className="text-xs text-[#6E4B4B]">/{costume.slug}</p>
-                    <p className="mt-1 text-xs text-[#6E4B4B]">
-                      {costume.category_name ?? 'Sin categoria'}
-                    </p>
-                  </button>
-
-                  <div className="mt-2 flex items-center gap-2">
+          {activeSection === 'disfraces' ? (
+            <div className="space-y-6">
+              <div className="rounded-2xl border border-[#E6D0C9] bg-white p-4 shadow-sm">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="font-serif text-xl text-[#4A1F1F]">Disfraces</h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex rounded-lg border border-[#D6B8AE] p-1">
+                      {(
+                        [
+                          { id: 'tabla', label: 'Tabla' },
+                          { id: 'lista', label: 'Lista' },
+                          { id: 'galeria', label: 'Galeria' },
+                        ] as const
+                      ).map((mode) => (
+                        <button
+                          key={mode.id}
+                          onClick={() => setViewMode(mode.id)}
+                          className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                            viewMode === mode.id
+                              ? 'bg-[#A8001A] text-white'
+                              : 'text-[#4A1F1F] hover:bg-[#FFF4F6]'
+                          }`}
+                        >
+                          {mode.label}
+                        </button>
+                      ))}
+                    </div>
                     <button
-                      onClick={() => handleToggleFromList(costume, 'is_available')}
-                      className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                        costume.is_available
-                          ? 'bg-[#EAF8EE] text-[#1B6F3A]'
-                          : 'bg-[#FCEDED] text-[#9E2D2D]'
-                      }`}
+                      onClick={handleCreateNew}
+                      className="rounded-lg bg-[#A8001A] px-3 py-1.5 text-xs font-semibold text-white"
                     >
-                      {costume.is_available ? 'Disponible' : 'No disponible'}
-                    </button>
-                    <button
-                      onClick={() => handleToggleFromList(costume, 'featured')}
-                      className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                        costume.featured
-                          ? 'bg-[#FFF7DE] text-[#8B5D00]'
-                          : 'bg-[#F3F0EF] text-[#6E4B4B]'
-                      }`}
-                    >
-                      {costume.featured ? 'Destacado' : 'Normal'}
+                      Nuevo
                     </button>
                   </div>
-                </article>
-              ))}
-            </div>
-          </aside>
+                </div>
 
-          <div className="space-y-6">
-            {panelMessage ? (
-              <div className="rounded-xl border border-[#E6D0C9] bg-white p-4 text-sm text-[#4A1F1F]">
-                {panelMessage}
+                {isLoadingPanelData ? <p className="text-sm text-[#6E4B4B]">Cargando catalogo...</p> : null}
+
+                {viewMode === 'lista' ? (
+                  <div className="max-h-[764px] space-y-3 overflow-y-auto pr-1">
+                    {costumes.map((costume) => (
+                      <article
+                        key={costume.id}
+                        className={`rounded-xl border p-3 ${
+                          costume.id === selectedCostumeId
+                            ? 'border-[#A8001A] bg-[#FFF4F6]'
+                            : 'border-[#E6D0C9] bg-white'
+                        }`}
+                      >
+                        <button
+                          className="w-full text-left"
+                          onClick={() => hydrateFormFromCostume(costume)}
+                        >
+                          <h3 className="text-sm font-semibold text-[#4A1F1F]">{costume.name}</h3>
+                          <p className="text-xs text-[#6E4B4B]">/{costume.slug}</p>
+                          <p className="mt-1 text-xs text-[#6E4B4B]">
+                            {costume.category_name ?? 'Sin categoria'}
+                          </p>
+                        </button>
+
+                        <div className="mt-2 flex items-center gap-2">
+                          <button
+                            onClick={() => handleToggleFromList(costume, 'is_available')}
+                            className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                              costume.is_available
+                                ? 'bg-[#EAF8EE] text-[#1B6F3A]'
+                                : 'bg-[#FCEDED] text-[#9E2D2D]'
+                            }`}
+                          >
+                            {costume.is_available ? 'Disponible' : 'No disponible'}
+                          </button>
+                          <button
+                            onClick={() => handleToggleFromList(costume, 'featured')}
+                            className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                              costume.featured
+                                ? 'bg-[#FFF7DE] text-[#8B5D00]'
+                                : 'bg-[#F3F0EF] text-[#6E4B4B]'
+                            }`}
+                          >
+                            {costume.featured ? 'Destacado' : 'Normal'}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
+
+                {viewMode === 'tabla' ? (
+                  <div className="max-h-[600px] overflow-y-auto rounded-xl border border-[#EFE1DB]">
+                    <table className="w-full text-left text-sm">
+                      <thead className="sticky top-0 bg-[#FFF8F5] text-xs font-semibold uppercase tracking-wide text-[#6E4B4B]">
+                        <tr>
+                          <th className="px-3 py-2">Nombre</th>
+                          <th className="px-3 py-2">Categoria</th>
+                          <th className="px-3 py-2">Disponible</th>
+                          <th className="px-3 py-2">Destacado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {costumes.map((costume) => (
+                          <tr
+                            key={costume.id}
+                            className={`border-t border-[#EFE1DB] ${
+                              costume.id === selectedCostumeId ? 'bg-[#FFF4F6]' : 'bg-white'
+                            }`}
+                          >
+                            <td className="px-3 py-2">
+                              <button
+                                onClick={() => hydrateFormFromCostume(costume)}
+                                className="text-left font-semibold text-[#4A1F1F] hover:text-[#A8001A]"
+                              >
+                                {costume.name}
+                                <span className="block text-xs font-normal text-[#6E4B4B]">/{costume.slug}</span>
+                              </button>
+                            </td>
+                            <td className="px-3 py-2 text-[#6E4B4B]">{costume.category_name ?? 'Sin categoria'}</td>
+                            <td className="px-3 py-2">
+                              <button
+                                onClick={() => handleToggleFromList(costume, 'is_available')}
+                                className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                                  costume.is_available
+                                    ? 'bg-[#EAF8EE] text-[#1B6F3A]'
+                                    : 'bg-[#FCEDED] text-[#9E2D2D]'
+                                }`}
+                              >
+                                {costume.is_available ? 'Disponible' : 'No disponible'}
+                              </button>
+                            </td>
+                            <td className="px-3 py-2">
+                              <button
+                                onClick={() => handleToggleFromList(costume, 'featured')}
+                                className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                                  costume.featured
+                                    ? 'bg-[#FFF7DE] text-[#8B5D00]'
+                                    : 'bg-[#F3F0EF] text-[#6E4B4B]'
+                                }`}
+                              >
+                                {costume.featured ? 'Destacado' : 'Normal'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
+
+                {viewMode === 'galeria' ? (
+                  <div className="grid max-h-[1400px] gap-4 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
+                    {costumes.map((costume) => (
+                      <article
+                        key={costume.id}
+                        className={`cursor-pointer rounded-xl border p-3 ${
+                          costume.id === selectedCostumeId
+                            ? 'border-[#A8001A] bg-[#FFF4F6]'
+                            : 'border-[#E6D0C9] bg-white'
+                        }`}
+                        onClick={() => hydrateFormFromCostume(costume)}
+                      >
+                        <div className="flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-lg bg-[#F3F0EF]">
+                          {costume.primary_image ? (
+                            <img
+                              src={getAdminImageUrl(costume.primary_image)}
+                              alt={costume.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs text-[#6E4B4B]">Sin imagen</span>
+                          )}
+                        </div>
+                        <h3 className="mt-2 text-sm font-semibold text-[#4A1F1F]">{costume.name}</h3>
+                        <p className="text-xs text-[#6E4B4B]">{costume.category_name ?? 'Sin categoria'}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleToggleFromList(costume, 'is_available');
+                            }}
+                            className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                              costume.is_available
+                                ? 'bg-[#EAF8EE] text-[#1B6F3A]'
+                                : 'bg-[#FCEDED] text-[#9E2D2D]'
+                            }`}
+                          >
+                            {costume.is_available ? 'Disponible' : 'No disponible'}
+                          </button>
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleToggleFromList(costume, 'featured');
+                            }}
+                            className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                              costume.featured
+                                ? 'bg-[#FFF7DE] text-[#8B5D00]'
+                                : 'bg-[#F3F0EF] text-[#6E4B4B]'
+                            }`}
+                          >
+                            {costume.featured ? 'Destacado' : 'Normal'}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
               </div>
-            ) : null}
 
-            <form
+              <form
               onSubmit={handleSaveCostume}
               className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm"
             >
@@ -992,13 +1168,13 @@ export default function Admin() {
               {isLoadingImages ? <p className="text-sm text-[#6E4B4B]">Cargando imagenes...</p> : null}
               {isUploadingImages ? <p className="text-sm text-[#6E4B4B]">Subiendo imagenes...</p> : null}
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-4 grid max-h-[1465px] gap-4 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
                 {images.map((image, index) => (
                   <article key={image.id} className="rounded-xl border border-[#E6D0C9] p-3">
                     <img
                       src={getAdminImageUrl(image.storage_path)}
                       alt={image.alt_text ?? 'Imagen del disfraz'}
-                      className="h-40 w-full rounded-lg object-cover"
+                      className="aspect-[4/5] w-full rounded-lg object-cover"
                     />
                     <div className="mt-2 flex items-center justify-between text-xs">
                       <span className={image.is_primary ? 'font-semibold text-[#A8001A]' : 'text-[#6E4B4B]'}>
@@ -1180,7 +1356,10 @@ export default function Admin() {
                 </div>
               )}
             </section>
+            </div>
+          ) : null}
 
+          {activeSection === 'configuracion' ? (
             <section className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-serif text-2xl text-[#4A1F1F]">Configuracion del sitio</h2>
@@ -1367,7 +1546,7 @@ export default function Admin() {
                 </div>
               </div>
             </section>
-          </div>
+          ) : null}
         </div>
       ) : null}
     </section>

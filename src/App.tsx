@@ -23,7 +23,6 @@ import type { CatalogCategory } from './types';
 export default function App() {
   const [currentView, setCurrentView] = useState<string>('inicio');
   const [selectedCostumeId, setSelectedCostumeId] = useState<string>('');
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [catalogCategory, setCatalogCategory] = useState<CatalogCategory>('Todos');
   const activeCatalogCategory =
     (currentView === 'catalogo' || currentView === 'catalogo-detail') && catalogCategory !== 'Todos'
@@ -34,15 +33,6 @@ export default function App() {
   useEffect(() => {
     if (window.location.hash === '#admin') {
       setCurrentView('admin');
-    }
-
-    const savedFavs = localStorage.getItem('madi_favorites');
-    if (savedFavs) {
-      try {
-        setFavorites(JSON.parse(savedFavs));
-      } catch (e) {
-        console.error('Error loading favorites', e);
-      }
     }
   }, []);
 
@@ -64,17 +54,6 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleToggleFavorite = (id: string) => {
-    let updated: string[];
-    if (favorites.includes(id)) {
-      updated = favorites.filter((favId) => favId !== id);
-    } else {
-      updated = [...favorites, id];
-    }
-    setFavorites(updated);
-    localStorage.setItem('madi_favorites', JSON.stringify(updated));
-  };
-
   const activeCostume = selectedCostumeId
     ? costumes.find((c) => c.id === selectedCostumeId)
     : undefined;
@@ -83,19 +62,11 @@ export default function App() {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'inicio':
-        return (
-          <Inicio
-            onNavigate={handleNavigate}
-            onToggleFavorite={handleToggleFavorite}
-            favorites={favorites}
-          />
-        );
+        return <Inicio onNavigate={handleNavigate} />;
       case 'catalogo':
         return (
           <Catalogo
             onNavigate={handleNavigate}
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
             costumes={costumes}
             selectedCategory={catalogCategory}
             onCategoryChange={setCatalogCategory}
@@ -107,8 +78,6 @@ export default function App() {
             costumeProp={activeCostume}
             costumeId={selectedCostumeId}
             onNavigate={handleNavigate}
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
           />
         );
       case 'servicios':
@@ -120,13 +89,7 @@ export default function App() {
       case 'admin':
         return <Admin />;
       default:
-        return (
-          <Inicio
-            onNavigate={handleNavigate}
-            onToggleFavorite={handleToggleFavorite}
-            favorites={favorites}
-          />
-        );
+        return <Inicio onNavigate={handleNavigate} />;
     }
   };
 
@@ -136,7 +99,6 @@ export default function App() {
         <Navbar
           currentView={currentView}
           onNavigate={handleNavigate}
-          favoritesCount={favorites.length}
         />
 
         <main className="flex-grow" id="main-content-flow">

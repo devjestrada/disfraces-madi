@@ -106,6 +106,7 @@ export interface AdminCostume {
   featured: boolean;
   created_at: string;
   updated_at: string;
+  primary_image?: string | null;
 }
 
 export interface AdminCostumeImage {

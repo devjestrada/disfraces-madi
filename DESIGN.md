@@ -194,3 +194,15 @@ Iconos propios, no disponibles en Lucide, dibujados como SVG a medida para mante
 - Todas las micro-interacciones usan `ease-out` para entradas y `ease-in` para salidas, con duración entre 150–300ms; nunca superar 300ms para no percibirse lento.
 
 ---
+
+## 5. Estándares de interacción
+
+### 5.1 Mensajería al usuario (prohibido `alert`/`confirm`/`prompt` nativos)
+
+- **Regla obligatoria:** ningún flujo de la aplicación (público o panel de administración) debe usar `alert()`, `confirm()` ni `prompt()` nativos del navegador. Todo feedback al usuario (éxito, error, advertencia, confirmación) se implementa con componentes DOM propios del sistema de diseño.
+- **Componentes de referencia** (`src/components/`):
+  - `Toast.tsx` — banner de feedback inline con variantes `success` / `error` / `info`, auto-dismiss a los 4 segundos. Reemplaza cualquier mensaje de éxito o error.
+  - `ConfirmDialog.tsx` — modal de confirmación con overlay, usado para cualquier acción destructiva o irreversible (ej. eliminar un registro). Reemplaza `window.confirm`.
+- **Uso:** cada vista que dispare mensajes de feedback mantiene su propio estado de `toast` (`ToastMessage | null`) y, si aplica, `confirmState` para confirmaciones, siguiendo el patrón implementado en `src/views/Admin.tsx`.
+
+---

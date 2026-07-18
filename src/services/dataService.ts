@@ -16,6 +16,10 @@ function normalizeCostumeRecord(costume: any): Costume {
     details: costume.details ?? [],
     fabrics: costume.fabrics ?? [],
     accessories: costume.accessories ?? [],
+    isAvailable: costume.isAvailable ?? costume.is_available ?? false,
+    rentalPrice: costume.rentalPrice ?? costume.rental_price,
+    salePrice: costume.salePrice ?? costume.sale_price,
+    reviewsCount: costume.reviewsCount ?? costume.reviews_count ?? 0,
   } as Costume;
 }
 

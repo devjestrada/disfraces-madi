@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Heart } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import logoDisfracesMadi from '../assets/images/logo_disfraces_madi.png';
 import type { CatalogCategory } from '../types';
@@ -7,10 +7,9 @@ import type { CatalogCategory } from '../types';
 interface NavbarProps {
   currentView: string;
   onNavigate: (view: string, costumeId?: string, category?: CatalogCategory) => void;
-  favoritesCount: number;
 }
 
-export default function Navbar({ currentView, onNavigate, favoritesCount }: NavbarProps) {
+export default function Navbar({ currentView, onNavigate }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
@@ -79,22 +78,6 @@ export default function Navbar({ currentView, onNavigate, favoritesCount }: Navb
                 </button>
               );
             })}
-          </div>
-
-          <div className="hidden md:flex items-center space-x-4" id="desktop-nav-actions">
-            <button
-              onClick={() => handleNavClick('catalogo')}
-              className="p-2 text-[#1e1b18]/80 hover:text-[#a8001a] transition-colors relative cursor-pointer"
-              title="Ver Catálogo"
-              id="navbar-favorites-btn"
-            >
-              <Heart className={`h-5 w-5 ${favoritesCount > 0 ? 'fill-[#a8001a] text-[#a8001a]' : ''}`} />
-              {favoritesCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#a8001a] text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center shadow-sm">
-                  {favoritesCount}
-                </span>
-              )}
-            </button>
           </div>
 
           <div className="md:hidden flex items-center space-x-3">

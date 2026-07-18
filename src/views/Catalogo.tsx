@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, SlidersHorizontal, Heart, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { Search, SlidersHorizontal, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 import { CatalogCategory, Costume } from '../types';
 import { COSTUMES } from '../data';
 import WhatsAppIcon from '../components/WhatsAppIcon';
@@ -7,8 +7,6 @@ import { usePublicData } from '../context/PublicDataContext';
 
 interface CatalogoProps {
   onNavigate: (view: string, costumeId?: string, category?: CatalogCategory) => void;
-  favorites: string[];
-  onToggleFavorite: (id: string) => void;
   costumes: Costume[];
   selectedCategory: CatalogCategory;
   onCategoryChange: (category: CatalogCategory) => void;
@@ -18,7 +16,7 @@ type SortOption = 'default' | 'price-asc' | 'price-desc' | 'rating-desc';
 const categoryOptions: CatalogCategory[] = ['Todos', 'Cumbia', 'Garabato', 'Mapalé', 'Marimonda', 'Negrita Puloy', 'Congo', 'Monocuco', 'Muerte', 'Fantasía'];
 const preferredSizeOrder = ['4', '6', '8', '10', '12', '14', '16', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
-export default function Catalogo({ onNavigate, favorites, onToggleFavorite, costumes, selectedCategory, onCategoryChange }: CatalogoProps) {
+export default function Catalogo({ onNavigate, costumes, selectedCategory, onCategoryChange }: CatalogoProps) {
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
@@ -355,7 +353,6 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
               /* Costume Grid */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="costumes-card-grid">
                 {filteredCostumes.map((costume) => {
-                  const isFav = favorites.includes(costume.id);
                   return (
                     <div
                       key={costume.id}
@@ -363,7 +360,7 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
                       id={`costume-grid-card-${costume.id}`}
                     >
                       {/* Image section */}
-                      <div className="relative h-72 overflow-hidden bg-gray-100 shrink-0">
+                      <div className="relative aspect-[4/5] sm:h-72 sm:aspect-auto overflow-hidden bg-gray-100 shrink-0">
                         <img
                           src={costume.primaryImage}
                           alt={costume.name}
@@ -382,18 +379,6 @@ export default function Catalogo({ onNavigate, favorites, onToggleFavorite, cost
                             </span>
                           )}
                         </div>
-
-                        {/* Favorite Wishlist button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleFavorite(costume.id);
-                          }}
-                          className="absolute top-3 right-3 bg-[#fff8f5]/95 hover:bg-white p-2 rounded-full shadow-md text-gray-500 hover:text-[#a8001a] active:scale-90 transition-all cursor-pointer"
-                          id={`fav-btn-${costume.id}`}
-                        >
-                          <Heart className={`h-4.5 w-4.5 transition-colors ${isFav ? 'fill-[#a8001a] text-[#a8001a]' : 'text-[#1e1b18]/65'}`} />
-                        </button>
 
                          {/* Custom Price Notice Badge */}
                          <div className="absolute bottom-3 left-3 bg-[#a8001a]/95 text-[#fff8f5] font-serif font-semibold text-[11px] px-3 py-1.5 rounded-lg shadow-md border border-[#fdc003]/20 flex items-center gap-1.5">
