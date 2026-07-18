@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Changed
+- Se aprobaron (fijados a versión exacta) los scripts de instalación de `@google/genai`, `esbuild`, `fsevents` y `protobufjs` en el nuevo campo `allowScripts` de `package.json` (npm 11), eliminando la advertencia de `npm install`.
+
 ### Removed
 - Se eliminó la imagen local sin uso `atelier_madi_1783825203627.jpg` de `src/assets/images/`.
 
