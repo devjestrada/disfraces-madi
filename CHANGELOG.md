@@ -4,6 +4,7 @@
 - `App.tsx` ahora carga la vista `Admin` con `React.lazy()`/`Suspense` en vez de un import estático, sacando el panel administrativo (login, CRUD de disfraces, subida de imágenes) del bundle público inicial; queda en un chunk aparte (`Admin-*.js`, ~40KB) que solo se descarga al entrar a `/admin`.
 - `AGENTS.md`: se revirtió la política de precios — ahora se exige publicar precio de alquiler, venta y depósito en vez de ocultarlos (pendiente agregar `depositPrice` al modelo de datos para reflejarlo en la UI).
 - `AGENTS.md`: se formalizó el flujo de trabajo por spec con dos puntos de revisión explícitos del usuario (redacción de la spec y plan de implementación) antes de que el agente continúe.
+- `AGENTS.md`: al finalizar una spec ahora se exigen dos Pull Requests independientes (código funcional en rama `feature`, y cierre documental en rama `chore` con bump de versión, `CHANGELOG.md` y el movimiento de la spec a `specs_done`), en vez de mezclarlo todo en un solo PR.
 
 ## [0.4.2] - 2026-07-18
 
