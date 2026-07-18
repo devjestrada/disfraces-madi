@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Routes, Route, matchPath, useLocation, useNavigate } from 'react-router-dom';
 
@@ -14,13 +14,17 @@ import CatalogoDetail from './views/CatalogoDetail';
 import Servicios from './views/Servicios';
 import NuestraHistoria from './views/NuestraHistoria';
 import Contacto from './views/Contacto';
-import Admin from './views/Admin';
 import NotFound from './views/NotFound';
 
 // Helpers and types
 import useCostumes from './hooks/useCostumes';
 import { PublicDataProvider } from './context/PublicDataContext';
 import type { CatalogCategory } from './types';
+
+// El panel admin se carga solo cuando alguien visita /admin, para no
+// incluir su código (login, CRUD de disfraces, subida de imágenes) en
+// el bundle público inicial.
+const Admin = lazy(() => import('./views/Admin'));
 
 export default function App() {
   const location = useLocation();
@@ -75,7 +79,14 @@ export default function App() {
               <Route path="/servicios" element={<Servicios />} />
               <Route path="/nuestra-historia" element={<NuestraHistoria />} />
               <Route path="/contacto" element={<Contacto />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route
+                path="/admin"
+                element={
+                  <Suspense fallback={<AdminLoadingFallback />}>
+                    <Admin />
+                  </Suspense>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </motion.div>
@@ -87,5 +98,13 @@ export default function App() {
       <WhatsAppButton selectedCostumeName={activeCostumeForWhatsApp} />
     </div>
     </PublicDataProvider>
+  );
+}
+
+function AdminLoadingFallback() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center bg-[#fff8f5]" id="admin-loading-fallback">
+      <div className="h-14 w-14 rounded-full border-4 border-[#a8001a]/20 border-t-[#a8001a] animate-spin" />
+    </div>
   );
 }

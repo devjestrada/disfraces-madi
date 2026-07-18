@@ -1,6 +1,11 @@
 ## [Unreleased]
 
 ### Changed
+- `App.tsx` ahora carga la vista `Admin` con `React.lazy()`/`Suspense` en vez de un import estático, sacando el panel administrativo (login, CRUD de disfraces, subida de imágenes) del bundle público inicial; queda en un chunk aparte (`Admin-*.js`, ~40KB) que solo se descarga al entrar a `/admin`.
+
+## [0.4.2] - 2026-07-18
+
+### Changed
 - Se redimensionaron y comprimieron las 7 imágenes locales de `src/assets/` (logo, banner del hero, 4 categorías destacadas y "nuestra historia") ajustando su resolución al tamaño real en pantalla y convirtiendo las fotos de PNG a JPEG; el peso total de estos assets bajó de ~13.8MB a ~1.6MB sin pérdida visible de calidad.
 - Se aprobaron (fijados a versión exacta) los scripts de instalación de `@google/genai`, `esbuild`, `fsevents` y `protobufjs` en el nuevo campo `allowScripts` de `package.json` (npm 11), eliminando la advertencia de `npm install`.
 
