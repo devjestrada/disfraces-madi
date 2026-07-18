@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured, getPublicImageUrl } from '../lib/supabase';
 import { Costume, CostumeCategory, Review, SiteStats } from '../types';
-import { ASSETS, CONTACT_INFO, COSTUMES, REVIEWS, STATS } from '../data';
+import { CONTACT_INFO, STATS } from '../data';
 
 function normalizeCostumeRecord(costume: any): Costume {
   const primaryImage = costume.primaryImage ?? costume.primary_image ?? '';
@@ -44,9 +44,7 @@ function normalizeSiteStatsRecord(stats: unknown): SiteStats {
 
 export async function fetchCostumesFull(category?: CostumeCategory): Promise<Costume[]> {
   if (!isSupabaseConfigured) {
-    return category
-      ? COSTUMES.filter((costume) => costume.category === category)
-      : [...COSTUMES];
+    return [];
   }
 
   let query = supabase.from('costumes_full').select('*');
@@ -58,15 +56,11 @@ export async function fetchCostumesFull(category?: CostumeCategory): Promise<Cos
   const { data, error } = await query;
   if (error) {
     console.error('[Supabase] fetchCostumesFull error', error);
-    return category
-      ? COSTUMES.filter((costume) => costume.category === category)
-      : [...COSTUMES];
+    return [];
   }
 
   if (!Array.isArray(data)) {
-    return category
-      ? COSTUMES.filter((costume) => costume.category === category)
-      : [...COSTUMES];
+    return [];
   }
 
   return data.map(normalizeCostumeRecord);
@@ -119,7 +113,7 @@ export async function fetchContactInfo() {
 
 export async function fetchReviews(): Promise<Review[]> {
   if (!isSupabaseConfigured) {
-    return [...REVIEWS];
+    return [];
   }
 
   const { data, error } = await supabase
@@ -130,10 +124,10 @@ export async function fetchReviews(): Promise<Review[]> {
 
   if (error) {
     console.error('[Supabase] fetchReviews error', error);
-    return [...REVIEWS];
+    return [];
   }
 
-  return Array.isArray(data) ? (data as Review[]) : [...REVIEWS];
+  return Array.isArray(data) ? (data as Review[]) : [];
 }
 
 export function fetchAssetUrl(storagePath: string, bucket = 'site-assets') {

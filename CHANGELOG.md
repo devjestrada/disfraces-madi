@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+### Changed
+- `fetchCostumesFull` y `fetchReviews` en `src/services/dataService.ts` ya no sustituyen datos locales de muestra cuando Supabase falla o no está configurado; ahora retornan una lista vacía para que la app dependa exclusivamente de los datos reales de Supabase.
+
+### Removed
+- Se eliminaron los arrays de datos ficticios `COSTUMES` y `REVIEWS` de `src/data.ts` (disfraces y testimonios de muestra), junto con el fallback local correspondiente en `Catalogo.tsx` y `CatalogoDetail.tsx`.
+- Se eliminaron las imágenes locales sin uso `gala_cumbia_dress_1783825177019.jpg` y `marimonda_costume_1783825190583.jpg` de `src/assets/images/`.
+
 ## [0.4.0] - 2026-07-17
 
 ### Added

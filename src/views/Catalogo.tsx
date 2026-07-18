@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Search, SlidersHorizontal, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CatalogCategory, Costume } from '../types';
-import { COSTUMES } from '../data';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
 
@@ -13,7 +12,6 @@ interface CatalogoProps {
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'rating-desc';
 const categoryOptions: CatalogCategory[] = ['Todos', 'Cumbia', 'Garabato', 'Mapalé', 'Marimonda', 'Negrita Puloy', 'Congo', 'Monocuco', 'Muerte', 'Fantasía'];
 const preferredSizeOrder = ['4', '6', '8', '10', '12', '14', '16', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
-const EMPTY_COSTUMES: Costume[] = [];
 
 export default function Catalogo({ costumes }: CatalogoProps) {
   const navigate = useNavigate();
@@ -28,7 +26,6 @@ export default function Catalogo({ costumes }: CatalogoProps) {
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('default');
 
-  const costumesData = costumes.length > 0 ? costumes : selectedCategory === 'Todos' ? COSTUMES : EMPTY_COSTUMES;
   const { contactInfo } = usePublicData();
 
   // Toggle size filter
@@ -41,7 +38,7 @@ export default function Catalogo({ costumes }: CatalogoProps) {
   };
 
   const searchAndCategoryFilteredCostumes = useMemo(() => {
-    let result = [...costumesData];
+    let result = [...costumes];
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -59,7 +56,7 @@ export default function Catalogo({ costumes }: CatalogoProps) {
     }
 
     return result;
-  }, [costumesData, searchQuery, selectedCategory]);
+  }, [costumes, searchQuery, selectedCategory]);
 
   const availableSizePool = useMemo<string[]>(() => {
     const sizes = Array.from(
@@ -309,7 +306,7 @@ export default function Catalogo({ costumes }: CatalogoProps) {
             {/* Top Bar for Grid Stats */}
             <div className="flex flex-col sm:flex-row items-center justify-between bg-white px-6 py-4 rounded-xl border border-[#a8001a]/10 shadow-sm gap-4">
               <p className="text-sm font-medium text-[#1e1b18]/80">
-                Mostrando <strong className="text-[#a8001a]">{filteredCostumes.length}</strong> de <strong className="text-[#1e1b18]">{costumesData.length}</strong> disfraces de carnaval
+                Mostrando <strong className="text-[#a8001a]">{filteredCostumes.length}</strong> de <strong className="text-[#1e1b18]">{costumes.length}</strong> disfraces de carnaval
               </p>
               {selectedCategory !== 'Todos' && (
                 <span className="bg-[#a8001a]/10 text-[#a8001a] text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider font-mono">
