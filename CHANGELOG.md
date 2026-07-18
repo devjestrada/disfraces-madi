@@ -5,6 +5,8 @@
 - Se corrigieron textos menores: tilde de "Diseñadora" en `Admin.tsx`, y el copy de sanitización/devoluciones en `Catalogo.tsx` y `Servicios.tsx` ahora usa "higienizado(s)" en vez de "sanitizado(s)" y suaviza el plazo de devolución.
 - `AGENTS.md`: se revirtió la política de precios — ahora se exige publicar precio de alquiler, venta y depósito en vez de ocultarlos (pendiente agregar `depositPrice` al modelo de datos para reflejarlo en la UI).
 - `AGENTS.md`: se formalizó el flujo de trabajo por spec con dos puntos de revisión explícitos del usuario (redacción de la spec y plan de implementación) antes de que el agente continúe.
+- `AGENTS.md`: al finalizar una spec ahora se exigen dos Pull Requests independientes (código funcional en rama `feature`, y cierre documental en rama `chore` con bump de versión, `CHANGELOG.md` y el movimiento de la spec a `specs_done`), en vez de mezclarlo todo en un solo PR.
+- `AGENTS.md`: la redacción de specs en `specs_backlog` ahora se delega a un subagente independiente por archivo cuando hay varios pendientes, y se permite renombrar el archivo de spec si el nombre no es descriptivo o colisiona con uno existente en `specs_done`/`specs_backlog`.
 
 ## [0.4.2] - 2026-07-18
 
