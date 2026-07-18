@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, User, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useLocation } from 'react-router-dom';
 import logoDisfracesMadi from '../assets/images/logo_disfraces_madi.png';
@@ -75,6 +75,18 @@ export default function Navbar() {
             })}
           </div>
 
+          <div className="hidden md:flex items-center pl-6 ml-2 border-l border-[#1e1b18]/10">
+            <Link
+              to="/admin"
+              id="nav-link-admin"
+              title="Acceso administrativo"
+              className="flex items-center gap-1.5 rounded-full border border-[#1e1b18]/15 px-3 py-1.5 text-xs font-medium text-[#1e1b18]/60 hover:text-[#1e1b18]/90 hover:border-[#1e1b18]/30 transition-colors cursor-pointer"
+            >
+              <User className="h-3.5 w-3.5" />
+              <span>Admin</span>
+            </Link>
+          </div>
+
           <div className="md:hidden flex items-center space-x-3">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -114,6 +126,14 @@ export default function Navbar() {
                   </Link>
                 );
               })}
+              <Link
+                to="/admin"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 w-full text-left px-4 py-3 mt-2 rounded-xl text-sm font-medium text-[#1e1b18]/60 border-t border-[#1e1b18]/10 pt-4 cursor-pointer"
+              >
+                <User className="h-4 w-4" />
+                <span>Acceso administrativo</span>
+              </Link>
             </div>
           </motion.div>
         )}

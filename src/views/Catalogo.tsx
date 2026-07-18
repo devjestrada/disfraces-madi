@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CatalogCategory, Costume } from '../types';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
+import { formatCOP } from '../utils/format';
 
 interface CatalogoProps {
   costumes: Costume[];
@@ -137,15 +138,6 @@ export default function Catalogo({ costumes }: CatalogoProps) {
 
   const childSizes = availableSizes.filter((size) => /^\d+$/.test(size));
   const adultSizes = availableSizes.filter((size) => !/^\d+$/.test(size));
-
-  // Format price helper
-  const formatCOP = (num: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      maximumFractionDigits: 0,
-    }).format(num);
-  };
 
   const handleClearFilters = () => {
     setSearchQuery('');
@@ -321,9 +313,9 @@ export default function Catalogo({ costumes }: CatalogoProps) {
                 <Sparkles className="h-5 w-5 text-[#fdc003]" />
               </div>
               <div className="space-y-1.5 flex-1">
-                <p className="font-bold text-[#a8001a] text-sm font-serif">Alquiler con precios adaptados a tu presupuesto</p>
+                <p className="font-bold text-[#a8001a] text-sm font-serif">Precio de referencia, confirmado en tu visita</p>
                 <p className="text-[#1e1b18]/75">
-                  No publicamos tarifas fijas porque cada experiencia folclórica es única. Conversamos y pactamos el precio de forma personalizada durante tu visita para ajustarnos a tus recursos. <span className="font-semibold text-[#a8001a]">¡Escríbenos por WhatsApp para verificar disponibilidad y agendar tu fitting!</span>
+                  Los precios de cada disfraz son de referencia. Agenda tu visita de fitting para probarte la pieza y confirmar los detalles finales antes de tu alquiler. <span className="font-semibold text-[#a8001a]">¡Escríbenos por WhatsApp para verificar disponibilidad y agendar tu cita!</span>
                 </p>
               </div>
               <a
@@ -363,7 +355,7 @@ export default function Catalogo({ costumes }: CatalogoProps) {
                       id={`costume-grid-card-${costume.id}`}
                     >
                       {/* Image section */}
-                      <div className="relative aspect-[4/5] sm:h-72 sm:aspect-auto overflow-hidden bg-gray-100 shrink-0">
+                      <div className="relative aspect-[4/5] lg:h-72 lg:aspect-auto overflow-hidden bg-gray-100 shrink-0">
                         <img
                           src={costume.primaryImage}
                           alt={costume.name}
@@ -382,12 +374,6 @@ export default function Catalogo({ costumes }: CatalogoProps) {
                             </span>
                           )}
                         </div>
-
-                         {/* Custom Price Notice Badge */}
-                         <div className="absolute bottom-3 left-3 bg-[#a8001a]/95 text-[#fff8f5] font-serif font-semibold text-[11px] px-3 py-1.5 rounded-lg shadow-md border border-[#fdc003]/20 flex items-center gap-1.5">
-                           <Sparkles className="h-3 w-3 text-[#fdc003]" />
-                           <span>A tu Presupuesto</span>
-                         </div>
                       </div>
 
                       {/* Info Section */}
@@ -402,6 +388,16 @@ export default function Catalogo({ costumes }: CatalogoProps) {
                           <p className="text-xs text-[#1e1b18]/65 leading-relaxed line-clamp-3">
                             {costume.description}
                           </p>
+                          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 pt-1 font-mono">
+                            <span className="text-sm font-bold text-[#a8001a]">
+                              Alquiler: {formatCOP(costume.rentalPrice)}
+                            </span>
+                            {costume.salePrice ? (
+                              <span className="text-xs font-semibold text-[#1e1b18]/60">
+                                Venta: {formatCOP(costume.salePrice)}
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
 
                         {/* Actions buttons */}

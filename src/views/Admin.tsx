@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabaseAdmin } from '../lib/supabase';
 import Toast, { type ToastMessage, type ToastVariant } from '../components/Toast';
@@ -43,6 +43,15 @@ import {
 
 type AdminCheckState = 'checking' | 'granted' | 'denied' | 'missing-config';
 
+type UploadQueueItem = {
+  id: string;
+  name: string;
+  status: 'pending' | 'uploading' | 'done' | 'error';
+  error?: string;
+};
+
+const UPLOAD_CONCURRENCY = 3;
+
 type CostumeFormState = {
   name: string;
   slug: string;
@@ -51,6 +60,7 @@ type CostumeFormState = {
   designer_id: string;
   rental_price: string;
   sale_price: string;
+  deposit_price: string;
   is_available: boolean;
   featured: boolean;
 };
@@ -63,6 +73,7 @@ const EMPTY_FORM: CostumeFormState = {
   designer_id: '',
   rental_price: '',
   sale_price: '',
+  deposit_price: '',
   is_available: true,
   featured: false,
 };
@@ -116,7 +127,10 @@ export default function Admin() {
   const [images, setImages] = useState<AdminCostumeImage[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
   const [altDrafts, setAltDrafts] = useState<Record<string, string>>({});
+  const [altSaveStatus, setAltSaveStatus] = useState<Record<string, 'idle' | 'saving' | 'saved' | 'error'>>({});
+  const altDebounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [fabrics, setFabrics] = useState<AdminNamedOption[]>([]);
   const [accessories, setAccessories] = useState<AdminNamedOption[]>([]);
   const [detailsText, setDetailsText] = useState('');
@@ -268,6 +282,7 @@ export default function Admin() {
       designer_id: costume.designer_id ?? '',
       rental_price: String(costume.rental_price ?? ''),
       sale_price: costume.sale_price !== null ? String(costume.sale_price) : '',
+      deposit_price: costume.deposit_price !== null ? String(costume.deposit_price) : '',
       is_available: costume.is_available,
       featured: costume.featured,
     });
@@ -276,6 +291,7 @@ export default function Admin() {
   const loadImages = async (costumeId: string) => {
     setIsLoadingImages(true);
     setToast(null);
+    setUploadQueue([]);
     try {
       const loadedImages = await fetchCostumeImages(costumeId);
       setImages(loadedImages);
@@ -284,6 +300,7 @@ export default function Admin() {
         initialDrafts[item.id] = item.alt_text ?? '';
       });
       setAltDrafts(initialDrafts);
+      setAltSaveStatus({});
     } catch (error) {
       notifyError(error);
       setImages([]);
@@ -513,6 +530,7 @@ export default function Admin() {
         designer_id: form.designer_id || null,
         rental_price: Number(form.rental_price),
         sale_price: form.sale_price.trim() ? Number(form.sale_price) : null,
+        deposit_price: form.deposit_price.trim() ? Number(form.deposit_price) : null,
         is_available: form.is_available,
         featured: form.featured,
       };
@@ -523,6 +541,10 @@ export default function Admin() {
 
       if (Number.isNaN(payload.rental_price)) {
         throw new Error('Debes indicar un valor numerico para precio de alquiler.');
+      }
+
+      if (payload.deposit_price !== null && Number.isNaN(payload.deposit_price)) {
+        throw new Error('Debes indicar un valor numerico para el deposito.');
       }
 
       if (selectedCostumeId) {
@@ -602,21 +624,62 @@ export default function Admin() {
       return;
     }
 
+    const fileArray = Array.from(files);
+    const queue: UploadQueueItem[] = fileArray.map((file) => ({
+      id: crypto.randomUUID(),
+      name: file.name,
+      status: 'pending',
+    }));
+    const hadPrimaryAlready = images.length > 0;
+
     setIsUploadingImages(true);
+    setUploadQueue(queue);
     setToast(null);
 
-    try {
-      for (let i = 0; i < files.length; i += 1) {
-        await uploadCostumeImage(selectedCostumeId, files[i], {
-          makePrimary: images.length === 0 && i === 0,
-        });
+    const updateQueueItem = (id: string, patch: Partial<UploadQueueItem>) => {
+      setUploadQueue((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+    };
+
+    let nextIndex = 0;
+    let successCount = 0;
+    const failures: string[] = [];
+
+    const worker = async () => {
+      while (nextIndex < fileArray.length) {
+        const currentIndex = nextIndex;
+        nextIndex += 1;
+        const file = fileArray[currentIndex];
+        const item = queue[currentIndex];
+
+        updateQueueItem(item.id, { status: 'uploading' });
+        try {
+          await uploadCostumeImage(selectedCostumeId, file, {
+            makePrimary: !hadPrimaryAlready && currentIndex === 0,
+          });
+          updateQueueItem(item.id, { status: 'done' });
+          successCount += 1;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          updateQueueItem(item.id, { status: 'error', error: message });
+          failures.push(`${file.name}: ${message}`);
+        }
       }
-      await loadImages(selectedCostumeId);
-      notify('Imagenes cargadas correctamente.');
-    } catch (error) {
-      notifyError(error);
-    } finally {
-      setIsUploadingImages(false);
+    };
+
+    await Promise.all(
+      Array.from({ length: Math.min(UPLOAD_CONCURRENCY, fileArray.length) }, () => worker())
+    );
+
+    await loadImages(selectedCostumeId);
+    setIsUploadingImages(false);
+
+    if (failures.length === 0) {
+      notify(`${successCount} de ${fileArray.length} imagenes cargadas correctamente.`);
+    } else {
+      notify(
+        `${successCount} de ${fileArray.length} imagenes cargadas. Fallaron: ${failures.join('; ')}`,
+        'error'
+      );
     }
   };
 
@@ -645,16 +708,38 @@ export default function Admin() {
     }
   };
 
-  const handleSaveAlt = async (image: AdminCostumeImage) => {
-    setToast(null);
+  const persistAltText = async (image: AdminCostumeImage, value: string) => {
+    setAltSaveStatus((prev) => ({ ...prev, [image.id]: 'saving' }));
     try {
-      await updateCostumeImageAltText(image.id, altDrafts[image.id] ?? '');
-      if (selectedCostumeId) {
-        await loadImages(selectedCostumeId);
-      }
+      await updateCostumeImageAltText(image.id, value);
+      setImages((prev) =>
+        prev.map((item) => (item.id === image.id ? { ...item, alt_text: value.trim() || null } : item))
+      );
+      setAltSaveStatus((prev) => ({ ...prev, [image.id]: 'saved' }));
     } catch (error) {
+      setAltSaveStatus((prev) => ({ ...prev, [image.id]: 'error' }));
       notifyError(error);
     }
+  };
+
+  const handleAltTextChange = (image: AdminCostumeImage, value: string) => {
+    setAltDrafts((prev) => ({ ...prev, [image.id]: value }));
+    setAltSaveStatus((prev) => ({ ...prev, [image.id]: 'idle' }));
+
+    if (altDebounceTimers.current[image.id]) {
+      clearTimeout(altDebounceTimers.current[image.id]);
+    }
+    altDebounceTimers.current[image.id] = setTimeout(() => {
+      persistAltText(image, value);
+    }, 600);
+  };
+
+  const handleAltTextBlur = (image: AdminCostumeImage) => {
+    if (altDebounceTimers.current[image.id]) {
+      clearTimeout(altDebounceTimers.current[image.id]);
+      delete altDebounceTimers.current[image.id];
+    }
+    persistAltText(image, altDrafts[image.id] ?? '');
   };
 
   const handleMoveImage = async (imageId: string, direction: 'up' | 'down') => {
@@ -1105,6 +1190,18 @@ export default function Admin() {
                   />
                 </label>
 
+                <label className="text-sm text-[#4A1F1F]">
+                  Deposito (interno)
+                  <input
+                    value={form.deposit_price}
+                    onChange={(event) => handleFormField('deposit_price', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                    type="number"
+                    min="0"
+                    step="1000"
+                  />
+                </label>
+
                 <label className="text-sm text-[#4A1F1F] md:col-span-2">
                   Descripcion
                   <textarea
@@ -1166,7 +1263,34 @@ export default function Admin() {
               ) : null}
 
               {isLoadingImages ? <p className="text-sm text-[#6E4B4B]">Cargando imagenes...</p> : null}
-              {isUploadingImages ? <p className="text-sm text-[#6E4B4B]">Subiendo imagenes...</p> : null}
+
+              {uploadQueue.length > 0 ? (
+                <ul className="mt-3 space-y-1.5 rounded-lg border border-[#E6D0C9] p-3">
+                  {uploadQueue.map((item, index) => (
+                    <li key={item.id} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="truncate text-[#4A1F1F]">
+                        {index + 1}/{uploadQueue.length} {item.name}
+                      </span>
+                      <span
+                        className={
+                          item.status === 'error'
+                            ? 'font-semibold text-red-600'
+                            : item.status === 'done'
+                            ? 'font-semibold text-green-700'
+                            : item.status === 'uploading'
+                            ? 'font-semibold text-[#A8001A]'
+                            : 'text-[#6E4B4B]'
+                        }
+                      >
+                        {item.status === 'pending' && 'En espera'}
+                        {item.status === 'uploading' && 'Subiendo...'}
+                        {item.status === 'done' && 'Listo'}
+                        {item.status === 'error' && (item.error ?? 'Error')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
 
               <div className="mt-4 grid max-h-[1465px] gap-4 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
                 {images.map((image, index) => (
@@ -1198,18 +1322,35 @@ export default function Admin() {
                       </div>
                     </div>
 
-                    <input
-                      value={altDrafts[image.id] ?? ''}
-                      onChange={(event) =>
-                        setAltDrafts((prev) => ({ ...prev, [image.id]: event.target.value }))
-                      }
-                      placeholder="Texto alternativo"
-                      className="mt-2 w-full rounded-lg border border-[#D6B8AE] px-2 py-1 text-xs"
-                    />
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        value={altDrafts[image.id] ?? ''}
+                        onChange={(event) => handleAltTextChange(image, event.target.value)}
+                        onBlur={() => handleAltTextBlur(image)}
+                        placeholder="Texto alternativo"
+                        className="w-full rounded-lg border border-[#D6B8AE] px-2 py-1 text-xs"
+                      />
+                      <span
+                        className={
+                          altSaveStatus[image.id] === 'error'
+                            ? 'shrink-0 text-[10px] font-semibold text-red-600'
+                            : altSaveStatus[image.id] === 'saving'
+                            ? 'shrink-0 text-[10px] font-semibold text-[#6E4B4B]'
+                            : altSaveStatus[image.id] === 'saved'
+                            ? 'shrink-0 text-[10px] font-semibold text-green-700'
+                            : 'shrink-0 text-[10px] text-transparent'
+                        }
+                      >
+                        {altSaveStatus[image.id] === 'saving' && 'Guardando...'}
+                        {altSaveStatus[image.id] === 'saved' && 'Guardado'}
+                        {altSaveStatus[image.id] === 'error' && 'Error'}
+                        {(!altSaveStatus[image.id] || altSaveStatus[image.id] === 'idle') && '—'}
+                      </span>
+                    </div>
 
                     <div className="mt-2 flex flex-wrap gap-2">
                       <button
-                        onClick={() => handleSaveAlt(image)}
+                        onClick={() => handleAltTextBlur(image)}
                         className="rounded border border-[#4A1F1F] px-2 py-1 text-xs text-[#4A1F1F]"
                       >
                         Guardar alt

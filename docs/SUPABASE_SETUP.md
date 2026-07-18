@@ -40,6 +40,7 @@ Ejecuta en este orden exacto:
 5. `supabase/005_admin_auth.sql`
 6. `supabase/006_admin_rls.sql`
 7. `supabase/007_storage_admin.sql`
+8. `supabase/008_deposit_price.sql`
 
 ## Opcion A: SQL Editor (Dashboard)
 

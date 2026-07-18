@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
 import { Costume } from '../types';
+import { formatCOP } from '../utils/format';
 
 interface CatalogoDetailProps {
   costumeProp?: Costume;
@@ -86,7 +87,7 @@ export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetai
           {/* Column 1: Image Gallery (5cols) */}
           <div className="lg:col-span-5 space-y-4" id="detail-images-column">
             {/* Main Image */}
-            <div className="relative h-[480px] sm:h-[540px] rounded-2xl overflow-hidden bg-gray-50 border border-[#a8001a]/5 shadow-sm">
+            <div className="relative aspect-[4/5] lg:h-[540px] lg:aspect-auto rounded-2xl overflow-hidden bg-gray-50 border border-[#a8001a]/5 shadow-sm">
               <img
                 src={displayImage}
                 alt={costume.name}
@@ -117,7 +118,7 @@ export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetai
                   <button
                     key={index}
                     onClick={() => setActiveImage(imgUrl)}
-                    className={`h-24 sm:h-28 rounded-xl overflow-hidden border-2 bg-gray-100 transition-all cursor-pointer ${
+                    className={`aspect-[4/5] lg:h-28 lg:aspect-auto rounded-xl overflow-hidden border-2 bg-gray-100 transition-all cursor-pointer ${
                       displayImage === imgUrl ? 'border-[#a8001a] shadow-md scale-95' : 'border-[#a8001a]/10 hover:border-[#a8001a]/30'
                     }`}
                   >
@@ -161,9 +162,25 @@ export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetai
                     En Disfraces Madi creemos en la inclusión y accesibilidad de la tradición del Carnaval. El alquiler de cada pieza se acuerda de manera individualizada durante tu visita de prueba presencial de fitting, adaptándonos de forma positiva y profesional a tus necesidades y recursos.
                   </p>
                 </div>
-                <div className="pt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#846524] font-bold font-mono uppercase">
-                  <span>★ Tintorería Especializada Incluida</span>
-                  <span>★ Ajustes a Medida de Sastrería Incluidos</span>
+                <div className="pt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-mono">
+                  <div className="rounded-xl border border-[#a8001a]/15 bg-white/60 px-3 py-2.5 space-y-0.5">
+                    <p className="text-sm font-bold text-[#1e1b18]">
+                      Alquiler: <span className="text-[#a8001a]">{formatCOP(costume.rentalPrice)}</span>
+                    </p>
+                    {costume.depositPrice ? (
+                      <p className="text-[11px] text-[#1e1b18]/60">
+                        + Depósito reembolsable: <span className="font-semibold text-[#1e1b18]/80">{formatCOP(costume.depositPrice)}</span>
+                      </p>
+                    ) : null}
+                  </div>
+                  {costume.salePrice ? (
+                    <div className="rounded-xl border border-[#a8001a]/15 bg-white/60 px-3 py-2.5 space-y-0.5">
+                      <p className="text-sm font-bold text-[#1e1b18]">
+                        Venta: <span className="text-[#a8001a]">{formatCOP(costume.salePrice)}</span>
+                      </p>
+                      <p className="text-[11px] text-[#1e1b18]/60">Si prefieres quedarte con la pieza</p>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
