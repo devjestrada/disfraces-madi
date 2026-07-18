@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Sparkles, Ruler, CheckCircle, ArrowLeft, AlertCircle } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
-import { COSTUMES } from '../data';
+import { Link } from 'react-router-dom';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
 import { Costume } from '../types';
@@ -12,8 +11,7 @@ interface CatalogoDetailProps {
 }
 
 export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetailProps) {
-  const { costumeId } = useParams();
-  const costume = costumeProp ?? COSTUMES.find((c) => c.id === costumeId);
+  const costume = costumeProp;
 
   const [activeImage, setActiveImage] = useState('');
   const [selectedSize, setSelectedSize] = useState('');

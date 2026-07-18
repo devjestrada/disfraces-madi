@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, PropsWithChildren } from 'react';
 import { fetchContactInfo, fetchReviews, fetchSiteStats } from '../services/dataService';
-import { CONTACT_INFO, REVIEWS, STATS } from '../data';
+import { CONTACT_INFO, STATS } from '../data';
 import { ContactInfo, Review, SiteStats } from '../types';
 
 interface PublicDataContextValue {
@@ -14,7 +14,7 @@ interface PublicDataContextValue {
 const PublicDataContext = createContext<PublicDataContextValue>({
   contactInfo: CONTACT_INFO,
   siteStats: STATS,
-  reviews: REVIEWS,
+  reviews: [],
   isLoading: false,
   error: null,
 });
@@ -22,7 +22,7 @@ const PublicDataContext = createContext<PublicDataContextValue>({
 export function PublicDataProvider({ children }: PropsWithChildren) {
   const [contactInfo, setContactInfo] = useState<ContactInfo>(CONTACT_INFO);
   const [siteStats, setSiteStats] = useState<SiteStats>(STATS);
-  const [reviews, setReviews] = useState<Review[]>(REVIEWS);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
