@@ -169,7 +169,7 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
 ### Flujo de trabajo por spec
 
 1. **Apuntes iniciales:** El usuario agrega sus apuntes/ideas iniciales directamente en el archivo de la spec dentro de `docs/specs/specs_backlog`.
-2. **Redacción de la spec:** Cuando el usuario lo solicite, el agente redacta la spec de forma clara y correcta, editando el archivo.
+2. **Redacción de la spec:** Cuando el usuario lo solicite, el agente redacta la spec de forma clara y correcta, editando el archivo. Si hay varios archivos de spec pendientes de redactar en `specs_backlog`, se debe lanzar un subagente independiente por cada archivo (en paralelo, al ser tareas aisladas entre sí). El agente/subagente puede renombrar el archivo de spec durante la redacción si el nombre original no es suficientemente descriptivo o genera colisión con uno ya existente en `specs_done`/`specs_backlog`.
 3. **Revisión de la spec:** El usuario revisa la redacción. El agente **no debe avanzar** a la planeación hasta que el usuario indique explícitamente que la revisión fue exitosa.
 4. **Rama de trabajo:** Antes de iniciar el plan de implementación, crear una nueva rama de tipo `feature` (ej. `feature/nombre-de-la-spec`).
 5. **Planeación:** Con la spec ya revisada y aprobada, generar un plan específico de implementación (qué archivos/componentes se van a modificar y cómo). Presentar este plan como resultado antes de escribir código.
