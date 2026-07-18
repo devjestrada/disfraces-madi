@@ -1,10 +1,22 @@
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-18
+
+### Added
+- Se agregó el campo de depósito (`depositPrice`/`deposit_price`) al modelo de datos, con migración `supabase/008_deposit_price.sql` (columna nueva + vista `costumes_full` actualizada) y su registro en `docs/SUPABASE_SETUP.md`.
+- La ficha de disfraz ahora muestra precio de alquiler, venta (si aplica) y depósito reembolsable en COP, agrupados semánticamente (alquiler + depósito en una tarjeta, venta en otra); el catálogo muestra alquiler y venta (sin depósito) en cada tarjeta.
+- Se agregó un botón de acceso a `/admin` en el `NavBar` (desktop y menú móvil).
+- El panel Admin permite asignar el depósito de cada disfraz, muestra progreso individual y tolerancia a fallos al subir varias imágenes a la vez (concurrencia de 3), y autoguarda el texto alternativo de cada imagen con indicador de estado.
+
 ### Changed
 - `App.tsx` ahora carga la vista `Admin` con `React.lazy()`/`Suspense` en vez de un import estático, sacando el panel administrativo (login, CRUD de disfraces, subida de imágenes) del bundle público inicial; queda en un chunk aparte (`Admin-*.js`, ~40KB) que solo se descarga al entrar a `/admin`.
 - Se corrigieron textos menores: tilde de "Diseñadora" en `Admin.tsx`, y el copy de sanitización/devoluciones en `Catalogo.tsx` y `Servicios.tsx` ahora usa "higienizado(s)" en vez de "sanitizado(s)" y suaviza el plazo de devolución.
-- `AGENTS.md`: se revirtió la política de precios — ahora se exige publicar precio de alquiler, venta y depósito en vez de ocultarlos (pendiente agregar `depositPrice` al modelo de datos para reflejarlo en la UI).
+- `AGENTS.md`: se revirtió la política de precios — ahora se exige publicar precio de alquiler, venta y depósito en vez de ocultarlos.
 - `AGENTS.md`: se formalizó el flujo de trabajo por spec con dos puntos de revisión explícitos del usuario (redacción de la spec y plan de implementación) antes de que el agente continúe.
+- Se corrigió el copy del catálogo que afirmaba "no publicamos tarifas fijas", ahora coherente con la nueva política de precios públicos.
+
+### Fixed
+- Se corrigió el recorte de imágenes en viewports intermedios (tablet, ~640-1023px) en las tarjetas del catálogo, la imagen principal y las miniaturas de la ficha de disfraz.
 
 ## [0.4.2] - 2026-07-18
 
