@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-17
+
+### Added
+- Se incorporó routing real basado en URLs con `react-router-dom` (`/`, `/catalogo`, `/catalogo/:costumeId`, `/servicios`, `/nuestra-historia`, `/contacto`, `/admin`), reemplazando el estado interno `currentView` de `App.tsx`.
+- Se agregó una vista `NotFound` (`src/views/NotFound.tsx`) para rutas inexistentes, con tono de marca y CTA de vuelta a Inicio.
+- Se agregó `public/_redirects` para el fallback SPA en Netlify, de forma que recargar en cualquier ruta interna (`/catalogo`, `/admin`, etc.) no produzca un 404 del servidor.
+
+### Changed
+- El filtro de categoría del catálogo ahora se refleja en la URL como query param (`/catalogo?categoria=...`), permitiendo compartir y recargar links con el filtro aplicado.
+- El acceso al panel admin pasó del hash `#admin` a la ruta real `/admin`; los enlaces con el hash legado redirigen automáticamente.
+- `Navbar.tsx` y `Footer.tsx` migraron de `onNavigate` a `Link`/`useNavigate` de `react-router-dom`, derivando el estado "activo" desde `useLocation()`.
+
 ## [0.3.0] - 2026-07-17
 
 ### Added

@@ -1,39 +1,82 @@
-import React, { useState } from 'react';
-import { Sparkles, Ruler, CheckCircle, ArrowLeft } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Sparkles, Ruler, CheckCircle, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
 import { COSTUMES } from '../data';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
 import { Costume } from '../types';
 
 interface CatalogoDetailProps {
-  costumeId?: string;
   costumeProp?: Costume;
-  onNavigate: (view: string, costumeId?: string) => void;
+  isLoading?: boolean;
 }
 
-export default function CatalogoDetail({ costumeId, costumeProp, onNavigate }: CatalogoDetailProps) {
-  const costume = costumeProp ?? (COSTUMES.find((c) => c.id === costumeId) || COSTUMES[0]);
+export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetailProps) {
+  const { costumeId } = useParams();
+  const costume = costumeProp ?? COSTUMES.find((c) => c.id === costumeId);
 
-  const [activeImage, setActiveImage] = useState(costume.primaryImage);
-  const [selectedSize, setSelectedSize] = useState<string>(costume.sizes[0]);
+  const [activeImage, setActiveImage] = useState('');
+  const [selectedSize, setSelectedSize] = useState('');
   const [activeTab, setActiveTab] = useState<'materiales' | 'accesorios' | 'confeccion'>('materiales');
 
   const { contactInfo } = usePublicData();
 
+  useEffect(() => {
+    if (costume) {
+      setActiveImage(costume.primaryImage);
+      setSelectedSize(costume.sizes[0]);
+    }
+  }, [costume]);
+
+  const displayImage = activeImage || costume?.primaryImage || '';
+  const displaySize = selectedSize || costume?.sizes[0] || '';
+
+  if (!costume) {
+    if (isLoading) {
+      return (
+        <div className="bg-[#fff8f5] py-24" id="catalogo-detail-view-root">
+          <div className="max-w-3xl mx-auto px-4 text-center">
+            <div className="h-14 w-14 mx-auto rounded-full border-4 border-[#a8001a]/20 border-t-[#a8001a] animate-spin" />
+            <p className="mt-6 text-sm text-[#1e1b18]/60 font-medium">Cargando disfraz...</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-[#fff8f5] py-24" id="catalogo-detail-view-root">
+        <div className="max-w-xl mx-auto px-4 text-center bg-white rounded-3xl p-12 border border-[#a8001a]/10 shadow-sm space-y-4">
+          <AlertCircle className="h-14 w-14 text-[#a8001a]/40 mx-auto" />
+          <h1 className="font-serif text-2xl font-bold text-[#1e1b18]">Disfraz no encontrado</h1>
+          <p className="text-sm text-[#1e1b18]/60 max-w-md mx-auto">
+            Este disfraz ya no está disponible o el enlace no es correcto. Explora el resto de nuestra colección de Carnaval.
+          </p>
+          <Link
+            to="/catalogo"
+            className="inline-flex items-center space-x-2 px-6 py-2.5 bg-[#a8001a] hover:bg-[#920014] text-white font-semibold text-xs uppercase tracking-wider rounded-full transition-all"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Volver al Catálogo</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#fff8f5] py-8 sm:py-12" id="catalogo-detail-view-root">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Breadcrumbs & Back Navigation */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8" id="detail-nav-header">
-          <button
-            onClick={() => onNavigate('catalogo')}
+          <Link
+            to="/catalogo"
             className="inline-flex items-center space-x-2 text-sm font-semibold text-[#a8001a] hover:text-[#920014] transition-colors cursor-pointer"
           >
             <ArrowLeft className="h-4.5 w-4.5" />
             <span>Volver al Catálogo</span>
-          </button>
-          
+          </Link>
+
           <div className="text-xs sm:text-sm font-medium text-[#1e1b18]/60 font-mono">
             Catálogo &gt; {costume.category} &gt; <span className="text-[#a8001a] font-bold">{costume.name}</span>
           </div>
@@ -41,18 +84,18 @@ export default function CatalogoDetail({ costumeId, costumeProp, onNavigate }: C
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 bg-white p-6 sm:p-10 rounded-3xl border border-[#a8001a]/10 shadow-sm" id="detail-content-grid">
-          
+
           {/* Column 1: Image Gallery (5cols) */}
           <div className="lg:col-span-5 space-y-4" id="detail-images-column">
             {/* Main Image */}
             <div className="relative h-[480px] sm:h-[540px] rounded-2xl overflow-hidden bg-gray-50 border border-[#a8001a]/5 shadow-sm">
               <img
-                src={activeImage}
+                src={displayImage}
                 alt={costume.name}
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
-              
+
               {/* Badges Overlays */}
               <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
                 <span className="bg-[#a8001a] text-white text-[10px] font-mono tracking-wider font-bold uppercase px-3 py-1.5 rounded-full shadow-md">
@@ -77,7 +120,7 @@ export default function CatalogoDetail({ costumeId, costumeProp, onNavigate }: C
                     key={index}
                     onClick={() => setActiveImage(imgUrl)}
                     className={`h-24 sm:h-28 rounded-xl overflow-hidden border-2 bg-gray-100 transition-all cursor-pointer ${
-                      activeImage === imgUrl ? 'border-[#a8001a] shadow-md scale-95' : 'border-[#a8001a]/10 hover:border-[#a8001a]/30'
+                      displayImage === imgUrl ? 'border-[#a8001a] shadow-md scale-95' : 'border-[#a8001a]/10 hover:border-[#a8001a]/30'
                     }`}
                   >
                     <img
@@ -94,7 +137,7 @@ export default function CatalogoDetail({ costumeId, costumeProp, onNavigate }: C
 
           {/* Column 2: Costume Specs & Booking (7cols) */}
           <div className="lg:col-span-7 space-y-6 flex flex-col justify-between" id="detail-specs-column">
-            
+
             {/* Header metadata */}
             <div className="space-y-3">
               <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-[#1e1b18]">
@@ -225,14 +268,14 @@ export default function CatalogoDetail({ costumeId, costumeProp, onNavigate }: C
                 </span>
                 <span className="text-[10px] text-[#1e1b18]/40">Pregunta en tu visita si es posible ajustar por sastre</span>
               </div>
-              
+
               <div className="flex flex-wrap gap-2.5" id="detail-sizes-selector">
                 {costume.sizes.map((size) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
                     className={`h-11 px-4 text-sm font-bold rounded-xl border transition-all cursor-pointer ${
-                      selectedSize === size
+                      displaySize === size
                         ? 'bg-[#a8001a] text-white border-transparent shadow-md scale-95'
                         : 'bg-white border-[#a8001a]/15 text-[#1e1b18] hover:border-[#a8001a]/40'
                     }`}
@@ -247,7 +290,7 @@ export default function CatalogoDetail({ costumeId, costumeProp, onNavigate }: C
             <div className="grid grid-cols-1 gap-4 border-t border-[#a8001a]/10 pt-6" id="detail-action-buttons">
               <button
                 onClick={() => {
-                  const text = `Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial para probarme el disfraz "${costume.name}" en talla ${selectedSize}.`;
+                  const text = `Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial para probarme el disfraz "${costume.name}" en talla ${displaySize}.`;
                   window.open(`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent(text)}`, '_blank');
                 }}
                 className="w-full h-14 bg-[#25d366] hover:bg-[#20ba5a] text-white font-bold text-sm tracking-wider uppercase rounded-full shadow-lg flex items-center justify-center space-x-2.5 cursor-pointer transition-all hover:-translate-y-0.5 active:scale-95"

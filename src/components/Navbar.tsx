@@ -1,41 +1,36 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Link, useLocation } from 'react-router-dom';
 import logoDisfracesMadi from '../assets/images/logo_disfraces_madi.png';
-import type { CatalogCategory } from '../types';
 
-interface NavbarProps {
-  currentView: string;
-  onNavigate: (view: string, costumeId?: string, category?: CatalogCategory) => void;
+const navItems = [
+  { path: '/', label: 'Inicio' },
+  { path: '/catalogo', label: 'Catálogo' },
+  { path: '/servicios', label: 'Servicios' },
+  { path: '/nuestra-historia', label: 'Nuestra Historia' },
+  { path: '/contacto', label: 'Contacto' },
+];
+
+function isNavItemActive(pathname: string, itemPath: string) {
+  if (itemPath === '/catalogo') {
+    return pathname === '/catalogo' || pathname.startsWith('/catalogo/');
+  }
+  return pathname === itemPath;
 }
 
-export default function Navbar({ currentView, onNavigate }: NavbarProps) {
+export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-
-  const navItems = [
-    { id: 'inicio', label: 'Inicio' },
-    { id: 'catalogo', label: 'Catálogo' },
-    { id: 'servicios', label: 'Servicios' },
-    { id: 'historia', label: 'Nuestra Historia' },
-    { id: 'contacto', label: 'Contacto' },
-  ];
-
-  const handleNavClick = (viewId: string) => {
-    if (viewId === 'catalogo') {
-      onNavigate(viewId, undefined, 'Todos');
-    } else {
-      onNavigate(viewId);
-    }
-    setIsOpen(false);
-  };
+  const { pathname } = useLocation();
 
   return (
     <nav className="sticky top-0 z-50 bg-[#fff8f5]/95 backdrop-blur-md border-b border-[#a8001a]/10 shadow-sm" id="main-navbar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          <div
+          <Link
+            to="/"
             className="flex items-center space-x-2 cursor-pointer group"
-            onClick={() => handleNavClick('inicio')}
+            onClick={() => setIsOpen(false)}
             id="navbar-logo-container"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#a8001a] text-white shadow-md group-hover:scale-105 transition-transform duration-300">
@@ -53,16 +48,16 @@ export default function Navbar({ currentView, onNavigate }: NavbarProps) {
                 Carnaval de Barranquilla
               </p>
             </div>
-          </div>
+          </Link>
 
           <div className="hidden md:flex items-center space-x-8" id="desktop-nav-menu">
             {navItems.map((item) => {
-              const isActive = currentView === item.id || (item.id === 'catalogo' && currentView === 'catalogo-detail');
+              const isActive = isNavItemActive(pathname, item.path);
               return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.id)}
-                  id={`nav-link-${item.id}`}
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  id={`nav-link-${item.path === '/' ? 'inicio' : item.path.slice(1)}`}
                   className={`relative py-2 text-sm font-medium tracking-wide transition-colors duration-200 cursor-pointer ${
                     isActive ? 'text-[#a8001a]' : 'text-[#1e1b18]/80 hover:text-[#a8001a]'
                   }`}
@@ -75,7 +70,7 @@ export default function Navbar({ currentView, onNavigate }: NavbarProps) {
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     />
                   )}
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -103,11 +98,12 @@ export default function Navbar({ currentView, onNavigate }: NavbarProps) {
           >
             <div className="px-4 pt-2 pb-6 space-y-2">
               {navItems.map((item) => {
-                const isActive = currentView === item.id || (item.id === 'catalogo' && currentView === 'catalogo-detail');
+                const isActive = isNavItemActive(pathname, item.path);
                 return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavClick(item.id)}
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsOpen(false)}
                     className={`block w-full text-left px-4 py-3 rounded-xl text-base font-medium transition-colors cursor-pointer ${
                       isActive
                         ? 'bg-[#a8001a]/10 text-[#a8001a] font-semibold'
@@ -115,7 +111,7 @@ export default function Navbar({ currentView, onNavigate }: NavbarProps) {
                     }`}
                   >
                     {item.label}
-                  </button>
+                  </Link>
                 );
               })}
             </div>

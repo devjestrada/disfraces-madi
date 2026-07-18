@@ -1,28 +1,34 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, SlidersHorizontal, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CatalogCategory, Costume } from '../types';
 import { COSTUMES } from '../data';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
 
 interface CatalogoProps {
-  onNavigate: (view: string, costumeId?: string, category?: CatalogCategory) => void;
   costumes: Costume[];
-  selectedCategory: CatalogCategory;
-  onCategoryChange: (category: CatalogCategory) => void;
 }
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'rating-desc';
 const categoryOptions: CatalogCategory[] = ['Todos', 'Cumbia', 'Garabato', 'Mapalé', 'Marimonda', 'Negrita Puloy', 'Congo', 'Monocuco', 'Muerte', 'Fantasía'];
 const preferredSizeOrder = ['4', '6', '8', '10', '12', '14', '16', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const EMPTY_COSTUMES: Costume[] = [];
 
-export default function Catalogo({ onNavigate, costumes, selectedCategory, onCategoryChange }: CatalogoProps) {
+export default function Catalogo({ costumes }: CatalogoProps) {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedCategory = (searchParams.get('categoria') as CatalogCategory) || 'Todos';
+  const onCategoryChange = (category: CatalogCategory) => {
+    setSearchParams(category === 'Todos' ? {} : { categoria: category });
+  };
+
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('default');
 
-  const costumesData = costumes.length > 0 ? costumes : selectedCategory === 'Todos' ? COSTUMES : [];
+  const costumesData = costumes.length > 0 ? costumes : selectedCategory === 'Todos' ? COSTUMES : EMPTY_COSTUMES;
   const { contactInfo } = usePublicData();
 
   // Toggle size filter
@@ -404,7 +410,7 @@ export default function Catalogo({ onNavigate, costumes, selectedCategory, onCat
                         {/* Actions buttons */}
                         <div className="pt-2 flex items-center gap-2">
                           <button
-                            onClick={() => onNavigate('catalogo-detail', costume.id)}
+                            onClick={() => navigate(`/catalogo/${costume.id}`)}
                             className="flex-1 py-2.5 bg-[#a8001a]/10 hover:bg-[#a8001a] text-[#a8001a] hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center space-x-1 border border-transparent hover:shadow-md cursor-pointer"
                             id={`details-btn-${costume.id}`}
                           >
