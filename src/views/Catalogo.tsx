@@ -168,7 +168,7 @@ export default function Catalogo({ costumes }: CatalogoProps) {
             Explora Nuestra Colección
           </h1>
           <p className="text-sm sm:text-base text-[#1e1b18]/70">
-            Encuentra polleras, trajes imperiales de fantasía y disfraces tradicionales restaurados, sanitizados y ajustados a tu medida exacta.
+            Encuentra polleras, trajes imperiales de fantasía y disfraces tradicionales restaurados, higienizados y ajustados a tu medida exacta.
           </p>
         </div>
 
