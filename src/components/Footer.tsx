@@ -1,14 +1,10 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Clock, Heart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { usePublicData } from '../context/PublicDataContext';
 import logoDisfracesMadi from '../assets/images/logo_disfraces_madi.png';
-import type { CatalogCategory } from '../types';
 
-interface FooterProps {
-  onNavigate: (view: string, costumeId?: string, category?: CatalogCategory) => void;
-}
-
-export default function Footer({ onNavigate }: FooterProps) {
+export default function Footer() {
   const { contactInfo } = usePublicData();
 
   return (
@@ -46,29 +42,29 @@ export default function Footer({ onNavigate }: FooterProps) {
             </h3>
             <ul className="space-y-3 text-sm text-[#fff8f5]/80 font-medium">
               <li>
-                <button onClick={() => onNavigate('inicio')} className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
+                <Link to="/" className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
                   Inicio
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => onNavigate('catalogo', undefined, 'Todos')} className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
+                <Link to="/catalogo" className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
                   Explorar Catálogo
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => onNavigate('servicios')} className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
+                <Link to="/servicios" className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
                   Nuestros Servicios
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => onNavigate('historia')} className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
+                <Link to="/nuestra-historia" className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
                   Nuestra Historia
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => onNavigate('contacto')} className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
+                <Link to="/contacto" className="hover:text-[#fdc003] transition-colors cursor-pointer text-left">
                   Ponte en Contacto
-                </button>
+                </Link>
               </li>
             </ul>
           </div>

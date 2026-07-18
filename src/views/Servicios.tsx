@@ -3,11 +3,7 @@ import { Scissors, ShoppingBag, Clock3, Sparkles, Calendar, CheckCircle } from '
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
 
-interface ServiciosProps {
-  onNavigate: (view: string) => void;
-}
-
-export default function Servicios({ onNavigate }: ServiciosProps) {
+export default function Servicios() {
   const { contactInfo } = usePublicData();
   const coreServices = [
     {

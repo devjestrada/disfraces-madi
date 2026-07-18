@@ -1,16 +1,14 @@
 import React from 'react';
 import { Sparkles, ArrowRight, Star, Calendar, Compass, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { ASSETS } from '../data';
 import { usePublicData } from '../context/PublicDataContext';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import type { CostumeCategory } from '../types';
 
-interface InicioProps {
-  onNavigate: (view: string, costumeId?: string, category?: CostumeCategory | 'Todos') => void;
-}
-
-export default function Inicio({ onNavigate }: InicioProps) {
+export default function Inicio() {
+  const navigate = useNavigate();
   const categories: Array<{
     id: CostumeCategory;
     name: string;
@@ -105,7 +103,7 @@ export default function Inicio({ onNavigate }: InicioProps) {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
           >
             <button
-              onClick={() => onNavigate('catalogo', undefined, 'Todos')}
+              onClick={() => navigate('/catalogo')}
               className="w-full sm:w-auto flex items-center justify-center space-x-2 px-8 py-4 bg-[#a8001a] hover:bg-[#920014] text-[#fff8f5] font-semibold rounded-full shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 cursor-pointer"
             >
               <Compass className="h-5 w-5 text-[#fdc003]" />
@@ -165,7 +163,7 @@ export default function Inicio({ onNavigate }: InicioProps) {
           {categories.map((category, idx) => (
             <div
               key={category.id}
-              onClick={() => onNavigate('catalogo', undefined, category.id)}
+              onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(category.id)}`)}
               className="group relative h-96 rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
               id={`category-card-${category.id}`}
             >
@@ -235,13 +233,13 @@ export default function Inicio({ onNavigate }: InicioProps) {
               </p>
               <div className="pt-4 flex flex-col sm:flex-row gap-4">
                 <button
-                  onClick={() => onNavigate('historia')}
+                  onClick={() => navigate('/nuestra-historia')}
                   className="px-6 py-3.5 bg-[#fdc003] hover:bg-[#fabd00] text-[#1e1b18] font-bold text-sm rounded-full tracking-wider uppercase transition-colors shadow-lg cursor-pointer"
                 >
                   Conocer Nuestra Historia
                 </button>
                 <button
-                  onClick={() => onNavigate('servicios')}
+                  onClick={() => navigate('/servicios')}
                   className="px-6 py-3.5 bg-transparent hover:bg-white/5 border border-white/20 text-white font-bold text-sm rounded-full tracking-wider uppercase transition-colors cursor-pointer"
                 >
                   Ver Diseño a Medida
@@ -317,7 +315,7 @@ export default function Inicio({ onNavigate }: InicioProps) {
           </p>
           <div className="pt-2">
             <button
-              onClick={() => onNavigate('servicios')}
+              onClick={() => navigate('/servicios')}
               className="text-xs tracking-wider uppercase font-bold text-[#a8001a] hover:text-[#920014] flex items-center justify-center space-x-1 mx-auto cursor-pointer"
             >
               <span>Conoce todos nuestros servicios</span>
@@ -350,7 +348,7 @@ export default function Inicio({ onNavigate }: InicioProps) {
               <span>Agendar Cita por WhatsApp</span>
             </a>
             <button
-              onClick={() => onNavigate('contacto')}
+              onClick={() => navigate('/contacto')}
               className="w-full sm:w-auto px-8 py-3.5 bg-white/10 hover:bg-white/15 border border-white/30 hover:border-white text-white font-bold rounded-full text-sm tracking-wider uppercase transition-colors cursor-pointer"
             >
               💌 Enviar Consulta
