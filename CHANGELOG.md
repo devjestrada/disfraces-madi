@@ -1,5 +1,26 @@
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-17
+
+### Added
+- Se agregó mensajería DOM propia en el panel admin (`src/components/Toast.tsx` y `src/components/ConfirmDialog.tsx`), reemplazando `window.confirm` en la eliminación de disfraces y estandarizando el feedback de éxito/error/advertencia.
+- Se implementó un submenú de administración con secciones condicionales ("Disfraces" / "Configuración del sitio"), donde solo se renderiza la sección seleccionada.
+- Se añadieron 3 vistas alternables (Tabla, Lista, Galería) para el listado de disfraces en el panel admin, cada una con altura limitada y scroll vertical propio.
+- Se documentó en `DESIGN.md` (sección 5) el estándar obligatorio de no usar `alert`/`confirm`/`prompt` nativos.
+
+### Changed
+- Se corrigió el mapeo de datos en `src/services/dataService.ts` para traducir correctamente los campos `is_available`, `rental_price`, `sale_price` y `reviews_count` (snake_case de Supabase) a sus equivalentes camelCase usados por la UI pública.
+- Se ajustaron las cards del catálogo público para no recortar la imagen del disfraz en viewports móviles.
+- Se ajustó el texto del selector de talla en la ficha de producto ("Tallas Disponibles") y el aviso de ajuste por sastre.
+- Se actualizó el copy del botón de "Nuestra Historia" a "Explorar".
+- Se ajustaron las imágenes de la vista Galería (selector de disfraces y galería de imágenes por disfraz) a proporción retrato 4:5 para mostrar el disfraz completo.
+
+### Removed
+- Se eliminó el botón "Consultar por WhatsApp" duplicado en la ficha individual de producto.
+- Se eliminó el botón de favoritos (corazón) de toda la aplicación (Navbar, Catálogo, ficha de producto e Inicio), incluyendo su estado y persistencia en `localStorage`.
+
+## [0.2.0] - 2026-07-15
+
 ### Added
 - Se agregaron las migraciones `005_admin_auth.sql`, `006_admin_rls.sql` y `007_storage_admin.sql` para iniciar el módulo administrativo en Supabase.
 - Se creó la guía operativa `docs/SUPABASE_SETUP.md` con pasos de configuración, verificación y rollback para entornos nuevos.

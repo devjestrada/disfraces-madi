@@ -138,7 +138,7 @@ export default function NuestraHistoria({ onNavigate }: NuestraHistoriaProps) {
               onClick={() => onNavigate('catalogo', undefined, 'Todos')}
               className="px-8 py-3.5 bg-[#fdc003] hover:bg-[#fabd00] text-[#1e1b18] font-bold text-sm tracking-wider uppercase rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer inline-flex items-center space-x-2"
             >
-              <span>🔍 Explorar Catálogo de Costura</span>
+              <span>🔍 Explorar</span>
             </button>
           </div>
         </div>

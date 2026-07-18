@@ -81,7 +81,25 @@ export async function fetchAdminCostumes() {
     throw new Error(error.message);
   }
 
-  return (data ?? []).map(toAdminCostume);
+  const costumes = (data ?? []).map(toAdminCostume);
+
+  const { data: primaryImages, error: imagesError } = await supabaseAdmin
+    .from('costume_images')
+    .select('costume_id, storage_path')
+    .eq('is_primary', true);
+
+  if (imagesError) {
+    throw new Error(imagesError.message);
+  }
+
+  const primaryImageByCostumeId = new Map(
+    (primaryImages ?? []).map((row: any) => [row.costume_id, row.storage_path as string])
+  );
+
+  return costumes.map((costume) => ({
+    ...costume,
+    primary_image: primaryImageByCostumeId.get(costume.id) ?? null,
+  }));
 }
 
 export async function createCostume(payload: AdminCostumePayload) {

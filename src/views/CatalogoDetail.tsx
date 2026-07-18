@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Sparkles, Ruler, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Sparkles, Ruler, CheckCircle, ArrowLeft } from 'lucide-react';
 import { COSTUMES } from '../data';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
@@ -9,27 +9,16 @@ interface CatalogoDetailProps {
   costumeId?: string;
   costumeProp?: Costume;
   onNavigate: (view: string, costumeId?: string) => void;
-  favorites: string[];
-  onToggleFavorite: (id: string) => void;
 }
 
-export default function CatalogoDetail({ costumeId, costumeProp, onNavigate, favorites, onToggleFavorite }: CatalogoDetailProps) {
+export default function CatalogoDetail({ costumeId, costumeProp, onNavigate }: CatalogoDetailProps) {
   const costume = costumeProp ?? (COSTUMES.find((c) => c.id === costumeId) || COSTUMES[0]);
 
   const [activeImage, setActiveImage] = useState(costume.primaryImage);
   const [selectedSize, setSelectedSize] = useState<string>(costume.sizes[0]);
   const [activeTab, setActiveTab] = useState<'materiales' | 'accesorios' | 'confeccion'>('materiales');
 
-  const isFav = favorites.includes(costume.id);
-
   const { contactInfo } = usePublicData();
-
-  const handleWhatsAppInquiry = () => {
-    const text = `Hola Sra. Madi, me interesa consultar el alquiler del vestido de carnaval "${costume.name}" en talla ${selectedSize}. ¿Tienen disponibilidad?`;
-    const formattedText = encodeURIComponent(text);
-    const url = `https://wa.me/${contactInfo.whatsapp}?text=${formattedText}`;
-    window.open(url, '_blank');
-  };
 
   return (
     <div className="bg-[#fff8f5] py-8 sm:py-12" id="catalogo-detail-view-root">
@@ -78,15 +67,6 @@ export default function CatalogoDetail({ costumeId, costumeProp, onNavigate, fav
                   {costume.isAvailable ? '● Disponible para Alquiler' : '● Reservado / No Disponible'}
                 </span>
               </div>
-
-              {/* Favorites trigger */}
-              <button
-                onClick={() => onToggleFavorite(costume.id)}
-                className="absolute top-4 right-4 bg-white hover:bg-[#fff8f5] p-2.5 rounded-full shadow-md text-gray-500 hover:text-[#a8001a] transition-all cursor-pointer"
-                title="Añadir a Favoritos"
-              >
-                <Heart className={`h-5 w-5 ${isFav ? 'fill-[#a8001a] text-[#a8001a]' : 'text-[#1e1b18]/70'}`} />
-              </button>
             </div>
 
             {/* Thumbnails list */}
@@ -241,9 +221,9 @@ export default function CatalogoDetail({ costumeId, costumeProp, onNavigate, fav
               <div className="flex items-center justify-between text-xs font-semibold uppercase font-mono text-[#1e1b18]/70">
                 <span className="flex items-center space-x-1">
                   <Ruler className="h-4 w-4 text-[#a8001a]" />
-                  <span>Escoge tu Talla</span>
+                  <span>Tallas Disponibles</span>
                 </span>
-                <span className="text-[10px] text-[#1e1b18]/40">Ajustable por sastre</span>
+                <span className="text-[10px] text-[#1e1b18]/40">Pregunta en tu visita si es posible ajustar por sastre</span>
               </div>
               
               <div className="flex flex-wrap gap-2.5" id="detail-sizes-selector">
@@ -264,7 +244,7 @@ export default function CatalogoDetail({ costumeId, costumeProp, onNavigate, fav
             </div>
 
             {/* CTA Actions Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[#a8001a]/10 pt-6" id="detail-action-buttons">
+            <div className="grid grid-cols-1 gap-4 border-t border-[#a8001a]/10 pt-6" id="detail-action-buttons">
               <button
                 onClick={() => {
                   const text = `Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial para probarme el disfraz "${costume.name}" en talla ${selectedSize}.`;
@@ -274,14 +254,6 @@ export default function CatalogoDetail({ costumeId, costumeProp, onNavigate, fav
               >
                 <WhatsAppIcon className="h-5 w-5 text-white" />
                 <span>Agendar por WhatsApp</span>
-              </button>
-              
-              <button
-                onClick={handleWhatsAppInquiry}
-                className="w-full h-14 bg-white hover:bg-green-50/20 border-2 border-[#25d366] hover:border-[#20ba5a] text-[#128c7e] font-bold text-sm tracking-wider uppercase rounded-full flex items-center justify-center space-x-2.5 cursor-pointer transition-all active:scale-95 shadow-sm"
-              >
-                <WhatsAppIcon className="h-5 w-5 text-[#25d366]" />
-                <span>Consultar por WhatsApp</span>
               </button>
             </div>
 

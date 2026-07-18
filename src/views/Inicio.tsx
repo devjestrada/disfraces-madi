@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, ArrowRight, Star, Heart, Calendar, Compass, ShieldCheck } from 'lucide-react';
+import { Sparkles, ArrowRight, Star, Calendar, Compass, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ASSETS } from '../data';
 import { usePublicData } from '../context/PublicDataContext';
@@ -8,11 +8,9 @@ import type { CostumeCategory } from '../types';
 
 interface InicioProps {
   onNavigate: (view: string, costumeId?: string, category?: CostumeCategory | 'Todos') => void;
-  onToggleFavorite: (id: string) => void;
-  favorites: string[];
 }
 
-export default function Inicio({ onNavigate, onToggleFavorite, favorites }: InicioProps) {
+export default function Inicio({ onNavigate }: InicioProps) {
   const categories: Array<{
     id: CostumeCategory;
     name: string;
