@@ -1,10 +1,10 @@
 import carnival_main_banner from './assets/init_page/images/carnival_main_banner.jpg';
-import sra_madi_nuestra_historia from './assets/init_page/images/sra_madi_nuestra_historia.png';
+import sra_madi_nuestra_historia from './assets/init_page/images/sra_madi_nuestra_historia.jpg';
 
-import categoria_cumbia from './assets/init_page/images/categorias_destacadas/cumbia.png';
-import categoria_mapale from './assets/init_page/images/categorias_destacadas/mapale.png';
-import categoria_garabato from './assets/init_page/images/categorias_destacadas/garabato.png';
-import categoria_fantasia from './assets/init_page/images/categorias_destacadas/fantasia.png';
+import categoria_cumbia from './assets/init_page/images/categorias_destacadas/cumbia.jpg';
+import categoria_mapale from './assets/init_page/images/categorias_destacadas/mapale.jpg';
+import categoria_garabato from './assets/init_page/images/categorias_destacadas/garabato.jpg';
+import categoria_fantasia from './assets/init_page/images/categorias_destacadas/fantasia.jpg';
 
 export const ASSETS = {
   carnival_main_banner,
