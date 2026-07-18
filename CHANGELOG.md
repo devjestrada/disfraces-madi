@@ -17,6 +17,8 @@
 
 ### Fixed
 - Se corrigió el recorte de imágenes en viewports intermedios (tablet, ~640-1023px) en las tarjetas del catálogo, la imagen principal y las miniaturas de la ficha de disfraz.
+- `AGENTS.md`: al finalizar una spec ahora se exigen dos Pull Requests independientes (código funcional en rama `feature`, y cierre documental en rama `chore` con bump de versión, `CHANGELOG.md` y el movimiento de la spec a `specs_done`), en vez de mezclarlo todo en un solo PR.
+- `AGENTS.md`: la redacción de specs en `specs_backlog` ahora se delega a un subagente independiente por archivo cuando hay varios pendientes, y se permite renombrar el archivo de spec si el nombre no es descriptivo o colisiona con uno existente en `specs_done`/`specs_backlog`.
 
 ## [0.4.2] - 2026-07-18
 

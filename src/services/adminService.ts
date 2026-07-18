@@ -28,6 +28,7 @@ function toAdminCostume(record: any): AdminCostume {
     designer_name: record.designers?.name ?? null,
     rental_price: Number(record.rental_price ?? 0),
     sale_price: record.sale_price !== null ? Number(record.sale_price) : null,
+    deposit_price: record.deposit_price !== null && record.deposit_price !== undefined ? Number(record.deposit_price) : null,
     is_available: Boolean(record.is_available),
     featured: Boolean(record.featured),
     created_at: record.created_at,
@@ -73,7 +74,7 @@ export async function fetchAdminCostumes() {
   const { data, error } = await supabaseAdmin
     .from('costumes')
     .select(
-      'id, slug, name, category_id, description, designer_id, rental_price, sale_price, is_available, featured, created_at, updated_at, categories(name), designers(name)'
+      'id, slug, name, category_id, description, designer_id, rental_price, sale_price, deposit_price, is_available, featured, created_at, updated_at, categories(name), designers(name)'
     )
     .order('updated_at', { ascending: false });
 
@@ -106,7 +107,7 @@ export async function createCostume(payload: AdminCostumePayload) {
   const { data, error } = await supabaseAdmin
     .from('costumes')
     .insert(payload)
-    .select('id, slug, name, category_id, description, designer_id, rental_price, sale_price, is_available, featured, created_at, updated_at')
+    .select('id, slug, name, category_id, description, designer_id, rental_price, sale_price, deposit_price, is_available, featured, created_at, updated_at')
     .single();
 
   if (error) {
@@ -121,7 +122,7 @@ export async function updateCostume(costumeId: string, payload: AdminCostumePayl
     .from('costumes')
     .update({ ...payload, updated_at: new Date().toISOString() })
     .eq('id', costumeId)
-    .select('id, slug, name, category_id, description, designer_id, rental_price, sale_price, is_available, featured, created_at, updated_at')
+    .select('id, slug, name, category_id, description, designer_id, rental_price, sale_price, deposit_price, is_available, featured, created_at, updated_at')
     .single();
 
   if (error) {

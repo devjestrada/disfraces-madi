@@ -169,7 +169,7 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
 ### Flujo de trabajo por spec
 
 1. **Apuntes iniciales:** El usuario agrega sus apuntes/ideas iniciales directamente en el archivo de la spec dentro de `docs/specs/specs_backlog`.
-2. **Redacción de la spec:** Cuando el usuario lo solicite, el agente redacta la spec de forma clara y correcta, editando el archivo.
+2. **Redacción de la spec:** Cuando el usuario lo solicite, el agente redacta la spec de forma clara y correcta, editando el archivo. Si hay varios archivos de spec pendientes de redactar en `specs_backlog`, se debe lanzar un subagente independiente por cada archivo (en paralelo, al ser tareas aisladas entre sí). El agente/subagente puede renombrar el archivo de spec durante la redacción si el nombre original no es suficientemente descriptivo o genera colisión con uno ya existente en `specs_done`/`specs_backlog`.
 3. **Revisión de la spec:** El usuario revisa la redacción. El agente **no debe avanzar** a la planeación hasta que el usuario indique explícitamente que la revisión fue exitosa.
 4. **Rama de trabajo:** Antes de iniciar el plan de implementación, crear una nueva rama de tipo `feature` (ej. `feature/nombre-de-la-spec`).
 5. **Planeación:** Con la spec ya revisada y aprobada, generar un plan específico de implementación (qué archivos/componentes se van a modificar y cómo). Presentar este plan como resultado antes de escribir código.
@@ -177,16 +177,16 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
 7. **Implementación:** Una vez aprobado el plan, proceder con la implementación de los cambios descritos en la spec.
 8. **Confirmación de cambios:** Al finalizar la implementación, preguntar al usuario si los cambios se aplicaron correctamente.
    - Si el usuario **confirma** que todo está correcto:
-     a. Mover el archivo de la spec a la carpeta `docs/specs/specs_done/` (crear la carpeta si no existe).
-     b. Subir (incrementar) la versión en `package.json`.
-     c. Hacer commit de los cambios (incluyendo el movimiento de la spec y el bump de versión), subir (`push`) la rama `feature` al repositorio remoto y abrir el Pull Request correspondiente hacia la rama principal.
+     a. Hacer commit de los cambios de código en la rama `feature`, subir (`push`) esa rama al repositorio remoto y abrir el **primer Pull Request** (solo código funcional) hacia la rama principal.
+     b. Inmediatamente después, crear una **segunda rama** de tipo `chore` (ej. `chore/cierre-nombre-de-la-spec`) para el cierre documental de la spec, que incluya únicamente: mover el archivo de la spec a `docs/specs/specs_done/`, subir (incrementar) la versión en `package.json` (`npm version`) y la actualización correspondiente de `CHANGELOG.md`.
+     c. Hacer commit de esos cambios de cierre, subir (`push`) la rama `chore` y abrir el **segundo Pull Request**, independiente del primero.
    - Si el usuario **no confirma** o reporta problemas, no mover la spec ni actualizar la versión; realizar los ajustes necesarios y volver a preguntar.
 9. **Reporte de excepciones:** Si algún punto de la spec no pudo aplicarse tal cual (por ejemplo, texto "Actual" no encontrado exactamente), dejar constancia de ello en un comentario al final del archivo de spec antes de moverlo, indicando qué se aplicó al texto equivalente más cercano.
 10. **Nomenclatura al mover:** Mantener el nombre original del archivo de spec, sin renombrar, para preservar trazabilidad.
-11. **Cierre de rama:** Una vez que el Pull Request de la spec sea aprobado y mergeado a la rama principal, borrar la rama `feature` correspondiente tanto en local (`git branch -d`) como en el remoto (`git push origin --delete`), para mantener el repositorio limpio. No borrar la rama si el PR aún no fue aprobado y mergeado.
+11. **Cierre de ramas:** Una vez que cada Pull Request (el de código y el de cierre documental) sea aprobado y mergeado a la rama principal, borrar su rama correspondiente tanto en local (`git branch -d`) como en el remoto (`git push origin --delete`), para mantener el repositorio limpio. No borrar una rama mientras su PR no haya sido aprobado y mergeado.
 
 ### Reglas adicionales
 
 - No mover specs parcialmente implementadas: solo se mueven a `docs/specs/specs_done/` cuando el 100% de los puntos fue resuelto (aplicado o reportado explícitamente como no encontrado) **y** el usuario confirmó los cambios.
-- Cada spec debe corresponder a una única rama `feature` y a un único incremento de versión en `package.json`.
+- Cada spec finalizada exitosamente debe resultar en **exactamente dos Pull Requests independientes**: uno con el código funcional (rama `feature`) y otro con el cierre documental (rama `chore`, con el movimiento de la spec a `specs_done`, el bump de versión en `package.json` y la entrada en `CHANGELOG.md`). Nunca se deben mezclar en un mismo PR/rama.
 - Los cambios que sean exclusivamente de documentación (por ejemplo, edición de `AGENTS.md`, `CLAUDE.md`, `README.md`, `DESIGN.md` u otros archivos `.md`) **nunca** deben mezclarse en la misma rama que cambios de código funcional. Siempre deben ir en una rama separada (ej. `docs/nombre-del-cambio` o `chore/nombre-del-cambio`), con su propio commit, push y Pull Request independiente.
