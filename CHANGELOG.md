@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+### Removed
+- Se eliminó la imagen local sin uso `atelier_madi_1783825203627.jpg` de `src/assets/images/`.
+
+## [0.4.1] - 2026-07-17
+
 ### Changed
 - `fetchCostumesFull` y `fetchReviews` en `src/services/dataService.ts` ya no sustituyen datos locales de muestra cuando Supabase falla o no está configurado; ahora retornan una lista vacía para que la app dependa exclusivamente de los datos reales de Supabase.
 

@@ -176,6 +176,7 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
    - Si el usuario **confirma** que todo está correcto:
      a. Mover el archivo de la spec a la carpeta `docs/specs/specs_done/` (crear la carpeta si no existe).
      b. Subir (incrementar) la versión en `package.json`.
+     c. Hacer commit de los cambios (incluyendo el movimiento de la spec y el bump de versión), subir (`push`) la rama `feature` al repositorio remoto y abrir el Pull Request correspondiente hacia la rama principal.
    - Si el usuario **no confirma** o reporta problemas, no mover la spec ni actualizar la versión; realizar los ajustes necesarios y volver a preguntar.
 5. **Reporte de excepciones:** Si algún punto de la spec no pudo aplicarse tal cual (por ejemplo, texto "Actual" no encontrado exactamente), dejar constancia de ello en un comentario al final del archivo de spec antes de moverlo, indicando qué se aplicó al texto equivalente más cercano.
 6. **Nomenclatura al mover:** Mantener el nombre original del archivo de spec, sin renombrar, para preservar trazabilidad.
@@ -184,3 +185,4 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
 
 - No mover specs parcialmente implementadas: solo se mueven a `docs/specs/specs_done/` cuando el 100% de los puntos fue resuelto (aplicado o reportado explícitamente como no encontrado) **y** el usuario confirmó los cambios.
 - Cada spec debe corresponder a una única rama `feature` y a un único incremento de versión en `package.json`.
+- Los cambios que sean exclusivamente de documentación (por ejemplo, edición de `AGENTS.md`, `CLAUDE.md`, `README.md`, `DESIGN.md` u otros archivos `.md`) **nunca** deben mezclarse en la misma rama que cambios de código funcional. Siempre deben ir en una rama separada (ej. `docs/nombre-del-cambio` o `chore/nombre-del-cambio`), con su propio commit, push y Pull Request independiente.
