@@ -13,6 +13,7 @@ export interface Costume {
   gallery: string[];
   rentalPrice: number;
   salePrice?: number;
+  depositPrice?: number;
   isAvailable: boolean;
   featured?: boolean;
   designer?: string;
@@ -102,6 +103,7 @@ export interface AdminCostume {
   designer_name?: string | null;
   rental_price: number;
   sale_price: number | null;
+  deposit_price: number | null;
   is_available: boolean;
   featured: boolean;
   created_at: string;
@@ -126,6 +128,7 @@ export interface AdminCostumePayload {
   designer_id: string | null;
   rental_price: number;
   sale_price: number | null;
+  deposit_price: number | null;
   is_available: boolean;
   featured: boolean;
 }
