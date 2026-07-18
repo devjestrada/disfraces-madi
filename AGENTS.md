@@ -180,6 +180,7 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
    - Si el usuario **no confirma** o reporta problemas, no mover la spec ni actualizar la versión; realizar los ajustes necesarios y volver a preguntar.
 5. **Reporte de excepciones:** Si algún punto de la spec no pudo aplicarse tal cual (por ejemplo, texto "Actual" no encontrado exactamente), dejar constancia de ello en un comentario al final del archivo de spec antes de moverlo, indicando qué se aplicó al texto equivalente más cercano.
 6. **Nomenclatura al mover:** Mantener el nombre original del archivo de spec, sin renombrar, para preservar trazabilidad.
+7. **Cierre de rama:** Una vez que el Pull Request de la spec sea aprobado y mergeado a la rama principal, borrar la rama `feature` correspondiente tanto en local (`git branch -d`) como en el remoto (`git push origin --delete`), para mantener el repositorio limpio. No borrar la rama si el PR aún no fue aprobado y mergeado.
 
 ### Reglas adicionales
 
