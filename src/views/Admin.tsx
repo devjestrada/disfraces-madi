@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabaseAdmin } from '../lib/supabase';
 import Toast, { type ToastMessage, type ToastVariant } from '../components/Toast';
@@ -40,6 +40,8 @@ import {
   updateCostumeImageAltText,
   uploadCostumeImage,
 } from '../services/adminService';
+
+const InsightsSection = lazy(() => import('./admin/InsightsSection'));
 
 type AdminCheckState = 'checking' | 'granted' | 'denied' | 'missing-config';
 
@@ -122,7 +124,7 @@ export default function Admin() {
   const [isLoadingPanelData, setIsLoadingPanelData] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
-  const [activeSection, setActiveSection] = useState<'disfraces' | 'configuracion'>('disfraces');
+  const [activeSection, setActiveSection] = useState<'disfraces' | 'insights' | 'configuracion'>('disfraces');
   const [viewMode, setViewMode] = useState<'tabla' | 'lista' | 'galeria'>('lista');
   const [images, setImages] = useState<AdminCostumeImage[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
@@ -286,6 +288,16 @@ export default function Admin() {
       is_available: costume.is_available,
       featured: costume.featured,
     });
+  };
+
+  const handleNavigateToCostumeFromInsights = (costumeId: string) => {
+    const target = costumes.find((item) => item.id === costumeId);
+    if (target) {
+      hydrateFormFromCostume(target);
+    } else {
+      setSelectedCostumeId(costumeId);
+    }
+    setActiveSection('disfraces');
   };
 
   const loadImages = async (costumeId: string) => {
@@ -867,6 +879,7 @@ export default function Admin() {
             {(
               [
                 { id: 'disfraces', label: 'Disfraces' },
+                { id: 'insights', label: 'Insights' },
                 { id: 'configuracion', label: 'Configuracion del sitio' },
               ] as const
             ).map((section) => (
@@ -1498,6 +1511,12 @@ export default function Admin() {
               )}
             </section>
             </div>
+          ) : null}
+
+          {activeSection === 'insights' ? (
+            <Suspense fallback={<p className="text-sm text-[#6E4B4B]">Cargando Insights...</p>}>
+              <InsightsSection onNavigateToCostume={handleNavigateToCostumeFromInsights} />
+            </Suspense>
           ) : null}
 
           {activeSection === 'configuracion' ? (

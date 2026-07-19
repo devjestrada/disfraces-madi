@@ -177,3 +177,42 @@ export interface AdminSiteAsset {
   key: string;
   storage_path: string;
 }
+
+export interface AdminRentalHistoryRow {
+  id: string;
+  source_file: string | null;
+  invoice_number: string | null;
+  customer_name: string | null;
+  customer_address: string | null;
+  customer_phone: string | null;
+  rental_date: string | null;
+  costume_label: string;
+  category_label: string | null;
+  accessories_text: string | null;
+  total_value: number | null;
+  deposit_value: number | null;
+  notes: string | null;
+  matched_costume_id: string | null;
+  created_at: string;
+}
+
+export type RentalHistoryImportRow = Omit<AdminRentalHistoryRow, 'id' | 'created_at'>;
+
+export interface AdminCostumeLabelAlias {
+  id: string;
+  label_norm: string;
+  matched_costume_id: string | null;
+  created_at: string;
+}
+
+export interface CostumeEventCount {
+  costume_id: string;
+  count: number;
+}
+
+export type InsightsPeriodPreset = 'hoy' | '7dias' | 'mes' | 'anio' | 'historico' | 'personalizado';
+
+export interface DateRange {
+  from: Date | null;
+  to: Date | null;
+}
