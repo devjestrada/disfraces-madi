@@ -11,10 +11,13 @@ Este directorio contiene las migraciones SQL versionadas del proyecto.
 - `005_admin_auth.sql`: modelo de autorización admin (`admin_users` + `is_admin()`).
 - `006_admin_rls.sql`: políticas INSERT/UPDATE/DELETE exclusivas para admins.
 - `007_storage_admin.sql`: buckets y políticas de Storage para assets administrados.
+- `008_deposit_price.sql`: columna `deposit_price` en `costumes` y actualización de la vista `costumes_full`.
+- `009_costume_events.sql`: tabla `costume_events` (tracking anónimo interno de vistas de ficha y clics de WhatsApp), con INSERT abierto a `anon` y SELECT restringido a admin.
+- `010_rental_history.sql`: tablas `costume_rental_history` (histórico de alquileres importado del CSV digitalizado) y `costume_label_aliases` (vinculación reutilizable de etiquetas), ambas admin-only.
 
 ## Orden de ejecución
 
-Ejecuta las migraciones en orden numérico, sin saltos: `001` -> `007`.
+Ejecuta las migraciones en orden numérico, sin saltos: `001` -> `010`.
 
 ## Guía completa obligatoria
 

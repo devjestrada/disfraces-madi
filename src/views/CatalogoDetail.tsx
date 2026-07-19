@@ -5,6 +5,7 @@ import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
 import { Costume } from '../types';
 import { formatCOP } from '../utils/format';
+import { trackCostumeView, trackWhatsAppClick } from '../services/trackingService';
 
 interface CatalogoDetailProps {
   costumeProp?: Costume;
@@ -24,6 +25,7 @@ export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetai
     if (costume) {
       setActiveImage(costume.primaryImage);
       setSelectedSize(costume.sizes[0]);
+      trackCostumeView(costume.id);
     }
   }, [costume]);
 
@@ -305,6 +307,7 @@ export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetai
             <div className="grid grid-cols-1 gap-4 border-t border-[#a8001a]/10 pt-6" id="detail-action-buttons">
               <button
                 onClick={() => {
+                  trackWhatsAppClick(costume.id);
                   const text = `Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial para probarme el disfraz "${costume.name}" en talla ${displaySize}.`;
                   window.open(`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent(text)}`, '_blank');
                 }}
