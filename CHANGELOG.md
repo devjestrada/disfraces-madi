@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-18
+
+### Added
+- Nueva pestaña **Insights** en el panel Admin (Fase 1): selector de periodo, KPI de total de alquileres con variación, tops de disfraces más alquilados/visualizados con drawer de detalle completo, tabla histórica de alquileres con búsqueda/filtro/orden/paginación, importación de CSV desde el navegador y utilidad de vinculación manual con sugerencias automáticas.
+- Tracking interno propio (sin analítica de terceros): tabla `costume_events` (vistas de ficha y clics de "Agendar por WhatsApp"), instrumentado en `CatalogoDetail.tsx`, con deduplicación anti-sobreconteo en `localStorage`.
+- Migraciones `009_costume_events.sql` y `010_rental_history.sql` (+ tabla `costume_label_aliases`), documentadas en `supabase/README.md` y `docs/SUPABASE_SETUP.md`.
+
 ## [0.5.0] - 2026-07-18
 
 ### Added
