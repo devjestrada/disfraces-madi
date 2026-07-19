@@ -1,5 +1,5 @@
 # Documento de Especificación de Requerimientos (DER)
-## Dashboard de Insights — Panel de Administración, Disfraces Madi
+## Dashboard de Insights — Fase 1, Panel de Administración, Disfraces Madi
 
 **Versión:** 1.0
 **Fecha:** 18 de julio de 2026
@@ -29,6 +29,7 @@ No incluye:
 - Un sistema de reservas/citas en vivo (no existe hoy una tabla de `bookings` operativa; ver sección 8).
 - Integración de Google Analytics, Plausible, Meta Pixel u otra herramienta de analítica externa. **Todo el tracking descrito aquí se guarda en tablas propias de Supabase**, controladas por el propio proyecto.
 - Cambios al flujo del botón flotante de WhatsApp (`src/components/WhatsAppButton.tsx`) más allá de instrumentar el clic para tracking; el flujo conversacional sigue centrado exclusivamente en "🗓️ Agendar cita para probarme un disfraz" (regla de negocio, sección 2 de `AGENTS.md`).
+- **Alcance limitado a esta Fase 1.** Las "propuestas adicionales" originales (tasa de interés → contacto, valor gestionado en el periodo, disfraces destacados sin movimiento, estacionalidad histórica, exportar CSV) se trasladaron a una spec aparte, en espera: `docs/specs/specs_freeze/admin_insights_dashboard_fase2.spec.md`.
 
 ### 1.3 Definiciones y referencias
 
@@ -93,10 +94,7 @@ Observaciones relevantes para el diseño de la tabla histórica:
 - RF-03.1: **Total de alquileres en el periodo** — cuenta de filas del histórico (RF-05) cuya `fecha` cae dentro del periodo activo, con variación porcentual respecto al periodo anterior equivalente (ej. "este mes" vs. "mes anterior").
 - RF-03.2: **Top disfraces más alquilados** — ranking (top 5 visible en la card) por conteo de alquileres históricos vinculados (ver RF-06), con opción **"Ver detalle completo"** que abre un listado ampliado (todas las posiciones, no solo el top 5).
 - RF-03.3: **Top disfraces más visualizados** — ranking (top 5 visible) por conteo de eventos `view` de la tabla de tracking (RF-07), en el periodo activo, con la misma opción **"Ver detalle completo"**.
-- RF-03.4: **Tasa de interés → contacto** *(propuesta adicional)* — porcentaje de vistas de ficha que derivaron en un clic al botón "Agendar por WhatsApp" de esa misma ficha, en el periodo activo. Sirve para detectar disfraces que generan curiosidad pero poco contacto.
-- RF-03.5: **Valor gestionado en el periodo** *(propuesta adicional, solo interno)* — suma de `valor_total` del histórico en el periodo activo. Debe mostrarse únicamente dentro del panel Admin, nunca en el sitio público, en cumplimiento de la regla de precios de `AGENTS.md`.
-- RF-03.6: **Disfraces destacados sin movimiento** *(propuesta adicional)* — lista breve de disfraces con `featured = true` y cero o muy pocas vistas/alquileres en el periodo activo, como señal accionable para el equipo de marketing/exhibición.
-- RF-03.7: **Estacionalidad histórica** *(propuesta adicional)* — mini gráfico de barras con el conteo de alquileres por mes a través de todos los años disponibles en el CSV, para visualizar el pico de temporada de Carnaval de un vistazo.
+- RF-03.4 a RF-03.7 *(tasa de interés → contacto, valor gestionado, destacados sin movimiento, estacionalidad histórica)*: **movidos a Fase 2** — ver `docs/specs/specs_freeze/admin_insights_dashboard_fase2.spec.md`.
 - RF-03.8: Cada card debe indicar de forma discreta su fuente de datos ("Histórico de alquileres" o "Visitas al sitio") para que el equipo entienda que son dos fuentes distintas que pueden no coincidir en cobertura temporal.
 
 ### RF-04 "Ver detalle completo" de los Top
@@ -115,7 +113,7 @@ Observaciones relevantes para el diseño de la tabla histórica:
   - **Paginación** (la carga completa en el cliente es aceptable dado el volumen actual de ~115 registros, pero el diseño de la consulta debe soportar paginación server-side a futuro sin rediseño, ver RNF-01).
 - RF-05.4: Las columnas `customer_address` y `customer_phone` no deben mostrarse en la vista de tabla por defecto (solo en el detalle de fila expandido), para minimizar exposición innecesaria de datos personales incluso dentro del panel admin.
 - RF-05.5: `notes` (transcripción de ambigüedades) se muestra solo en el detalle expandido de la fila, no en la tabla general.
-- RF-05.6: Exportar la vista filtrada actual a CSV *(propuesta adicional)* — útil para contabilidad o respaldo, reutilizando los mismos datos ya cargados en el cliente.
+- RF-05.6 *(exportar la vista filtrada a CSV)*: **movido a Fase 2** — ver `docs/specs/specs_freeze/admin_insights_dashboard_fase2.spec.md`.
 
 ### RF-06 Vinculación de histórico con el catálogo actual
 
@@ -146,9 +144,9 @@ El dashboard debe sentirse parte del mismo taller cálido y artesanal que el res
 1. **Barra de filtros superior** (sticky): segmented control de periodo (RF-02.1) a la izquierda, selector de rango personalizado a la derecha (se revela solo si se elige "Rango personalizado"). Mismo estilo de chip/pill que ya usan los badges "Disponible"/"Destacado" en la tabla de disfraces.
 2. **Fila de KPIs** (grid responsive: 4 columnas en escritorio, 2 en tablet, 1 en móvil): tarjetas compactas con número grande en `JetBrains Mono` (coherente con la regla de `DESIGN.md` de que datos duros se comunican en fuente monoespaciada), etiqueta corta debajo, e indicador de variación (flecha + porcentaje, verde si sube, rojo tenue si baja — nunca el Rojo Madi de marca para esta semántica de error, según regla de iconografía de `DESIGN.md` 4.3).
 3. **Dos cards de "Top" lado a lado** (columna única en móvil): "Top disfraces más alquilados" y "Top disfraces más visualizados", cada una con lista de 5 filas (miniatura del disfraz + nombre + barra horizontal proporcional al conteo + número), y un enlace de texto "Ver detalle completo →" al pie que abre un drawer lateral con la tabla completa.
-4. **Card de estacionalidad** (ancho completo o dos tercios): gráfico de barras simple mes a mes (no un pie chart ni un 3D chart — comparaciones categóricas se leen mejor en barras), con los meses de temporada alta de Carnaval visualmente distinguidos (ej. barra en Oro Tradición vs. el resto en un tono neutro).
-5. **Card "Disfraces destacados sin movimiento"** (ancho completo o un tercio, junto a estacionalidad): lista corta tipo alerta suave, tono informativo (no alarmante — nada de rojo de error), con CTA directa "Editar disfraz" hacia la sección Disfraces.
-6. **Tabla histórica de alquileres** al final, ancho completo, con la misma estructura visual que la tabla ya existente en la vista "Disfraces" (`sticky` header, filas alternadas, badges de estado para "vinculado"/"sin vincular"), barra de herramientas propia arriba (buscador + filtros + botón de exportar CSV).
+4. *(Card de estacionalidad — movida a Fase 2, ver `docs/specs/specs_freeze/admin_insights_dashboard_fase2.spec.md`.)*
+5. *(Card "Disfraces destacados sin movimiento" — movida a Fase 2.)*
+6. **Tabla histórica de alquileres** al final, ancho completo, con la misma estructura visual que la tabla ya existente en la vista "Disfraces" (`sticky` header, filas alternadas, badges de estado para "vinculado"/"sin vincular"), barra de herramientas propia arriba (buscador + filtros; el botón de exportar CSV queda en Fase 2).
 
 ### 4.3 Interacción y feedback
 
@@ -232,9 +230,8 @@ Esta spec parte de apuntes crudos del usuario que dejaban varias decisiones abie
 
 ## 11. Estado de implementación
 
-Por el tamaño de la spec, el usuario pidió dividir la implementación en 2 fases.
+Por el tamaño de la spec original, el usuario pidió dividir la implementación en 2 fases. Esta spec quedó **acotada definitivamente a la Fase 1** (ver título y sección 1.2): implementada en su totalidad y confirmada por el usuario (rama `feature/admin-insights-dashboard-fase1`, PR de código y PR de cierre v0.6.0) — RF-01, RF-02, RF-03.1–03.3 y 03.8, RF-04, RF-05 (salvo RF-05.6, movido junto con RF-03.4–03.7 a la Fase 2), RF-06, RF-07 completo, y los principios de diseño/UX de la sección 4 aplicados a lo anterior.
 
-- **Fase 1 — implementada y confirmada por el usuario** (rama `feature/admin-insights-dashboard-fase1`, PR de código y PR de cierre v0.6.0): RF-01, RF-02, RF-03.1–03.3 y 03.8, RF-04, RF-05 completo salvo RF-05.6, RF-06, RF-07 completo, y los principios de diseño/UX de la sección 4 aplicados a lo anterior.
-- **Fase 2 — pendiente**, spec/PR aparte: RF-03.4 (tasa de interés → contacto), RF-03.5 (valor gestionado en el periodo), RF-03.6 (destacados sin movimiento), RF-03.7 (estacionalidad histórica), RF-05.6 (exportar CSV).
+Las "propuestas adicionales" originales (RF-03.4–03.7, RF-05.6) se trasladaron a `docs/specs/specs_freeze/admin_insights_dashboard_fase2.spec.md`, en espera sin fecha definida para retomarse como una spec independiente.
 
 Esta spec permanece en `specs_backlog` (no se mueve a `specs_done`) hasta que la Fase 2 quede implementada y confirmada, conforme a la regla de no mover specs parcialmente implementadas.

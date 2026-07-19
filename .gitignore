@@ -1,4 +1,5 @@
 media/
+non_public_assets/
 node_modules/
 build/
 dist/

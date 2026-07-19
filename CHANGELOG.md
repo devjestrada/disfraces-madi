@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Changed
+- `docs/specs/specs_done/admin_insights_dashboard.spec.md`: se acotó definitivamente a la Fase 1 (ya implementada); las "propuestas adicionales" (tasa de interés, valor gestionado, destacados sin movimiento, estacionalidad, exportar CSV) se trasladaron a `docs/specs/specs_freeze/admin_insights_dashboard_fase2.spec.md`, en espera sin fecha definida.
+- `AGENTS.md`: se documentó el propósito de la carpeta `docs/specs/specs_freeze` (specs en espera indefinida, ni pendientes activas ni implementadas).
+
 ## [0.6.0] - 2026-07-18
 
 ### Added
