@@ -165,6 +165,7 @@ Este proyecto sigue **Semantic Versioning (SemVer)** y el formato **Keep a Chang
   3. Si algún punto de la spec no pudo aplicarse (por ejemplo, texto "Actual" no encontrado exactamente), dejar constancia de ello en un comentario al final del archivo antes de moverlo, indicando qué se aplicó al texto equivalente más cercano.
   4. No mover specs parcialmente implementadas: solo se mueven a `docs/specs/specs_done/` cuando el 100% de los puntos fue resuelto (aplicado o reportado explícitamente como no encontrado).
 - Nomenclatura sugerida al mover: mantener el nombre original del archivo, sin renombrar, para preservar trazabilidad.
+- **`docs/specs/specs_freeze`:** specs en espera indefinida, sin fecha para retomarse (ej. alcance recortado de una spec grande para cerrar solo una parte, quedando el resto congelado como documento aparte). No cuentan como pendientes activas en `specs_backlog` ni como implementadas en `specs_done`. Para reactivar una, moverla de vuelta a `specs_backlog` y seguir el flujo normal.
 
 ### Flujo de trabajo por spec
 
