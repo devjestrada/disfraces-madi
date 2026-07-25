@@ -1,5 +1,8 @@
+export type CostumeSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '4' | '6' | '8' | '10' | '12' | '14' | '16';
+
 export interface Costume {
   id: string;
+  slug: string;
   name: string;
   category: 'Cumbia' | 'Garabato' | 'Mapalé' | 'Marimonda' | 'Negrita Puloy' | 'Congo' | 'Monocuco' | 'Muerte' | 'Fantasía';
   rating: number;
@@ -8,10 +11,10 @@ export interface Costume {
   details: string[];
   fabrics: string[];
   accessories: string[];
-  sizes: ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[];
+  sizes: CostumeSize[];
   primaryImage: string;
   gallery: string[];
-  rentalPrice: number;
+  rentalPrice?: number;
   salePrice?: number;
   depositPrice?: number;
   isAvailable: boolean;
@@ -101,7 +104,7 @@ export interface AdminCostume {
   description: string;
   designer_id: string | null;
   designer_name?: string | null;
-  rental_price: number;
+  rental_price: number | null;
   sale_price: number | null;
   deposit_price: number | null;
   is_available: boolean;
@@ -126,7 +129,7 @@ export interface AdminCostumePayload {
   category_id: string;
   description: string;
   designer_id: string | null;
-  rental_price: number;
+  rental_price: number | null;
   sale_price: number | null;
   deposit_price: number | null;
   is_available: boolean;
@@ -148,7 +151,7 @@ export interface AdminCostumeRelations {
   details: AdminCostumeDetail[];
   fabricIds: string[];
   accessoryIds: string[];
-  sizes: ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[];
+  sizes: CostumeSize[];
 }
 
 export interface AdminSiteStats {

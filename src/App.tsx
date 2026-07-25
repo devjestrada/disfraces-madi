@@ -30,8 +30,8 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const detailMatch = matchPath('/catalogo/:costumeId', location.pathname);
-  const selectedCostumeId = detailMatch?.params.costumeId;
+  const detailMatch = matchPath('/catalogo/:costumeSlug', location.pathname);
+  const selectedCostumeSlug = detailMatch?.params.costumeSlug;
   const isCatalogRoute = location.pathname === '/catalogo' || Boolean(detailMatch);
   const categoryParam = new URLSearchParams(location.search).get('categoria') as CatalogCategory | null;
   const activeCatalogCategory =
@@ -49,9 +49,23 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
 
-  const activeCostume = selectedCostumeId
-    ? costumes.find((c) => c.id === selectedCostumeId)
+  const activeCostume = selectedCostumeSlug
+    ? costumes.find((c) => c.slug === selectedCostumeSlug)
     : undefined;
+
+  // Compatibilidad con enlaces antiguos que usaban el uuid en la URL.
+  const legacyCostumeMatch =
+    !activeCostume && selectedCostumeSlug
+      ? costumes.find((c) => c.id === selectedCostumeSlug)
+      : undefined;
+
+  useEffect(() => {
+    if (legacyCostumeMatch) {
+      navigate(`/catalogo/${legacyCostumeMatch.slug}`, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [legacyCostumeMatch]);
+
   const activeCostumeForWhatsApp = activeCostume?.name;
 
   return (
@@ -73,7 +87,7 @@ export default function App() {
               <Route path="/" element={<Inicio />} />
               <Route path="/catalogo" element={<Catalogo costumes={costumes} />} />
               <Route
-                path="/catalogo/:costumeId"
+                path="/catalogo/:costumeSlug"
                 element={<CatalogoDetail costumeProp={activeCostume} isLoading={isLoading} />}
               />
               <Route path="/servicios" element={<Servicios />} />

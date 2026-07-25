@@ -165,16 +165,20 @@ export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetai
                   </p>
                 </div>
                 <div className="pt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-mono">
-                  <div className="rounded-xl border border-[#a8001a]/15 bg-white/60 px-3 py-2.5 space-y-0.5">
-                    <p className="text-sm font-bold text-[#1e1b18]">
-                      Alquiler: <span className="text-[#a8001a]">{formatCOP(costume.rentalPrice)}</span>
-                    </p>
-                    {costume.depositPrice ? (
-                      <p className="text-[11px] text-[#1e1b18]/60">
-                        + Depósito reembolsable: <span className="font-semibold text-[#1e1b18]/80">{formatCOP(costume.depositPrice)}</span>
-                      </p>
-                    ) : null}
-                  </div>
+                  {costume.rentalPrice || costume.depositPrice ? (
+                    <div className="rounded-xl border border-[#a8001a]/15 bg-white/60 px-3 py-2.5 space-y-0.5">
+                      {costume.rentalPrice ? (
+                        <p className="text-sm font-bold text-[#1e1b18]">
+                          Alquiler: <span className="text-[#a8001a]">{formatCOP(costume.rentalPrice)}</span>
+                        </p>
+                      ) : null}
+                      {costume.depositPrice ? (
+                        <p className="text-[11px] text-[#1e1b18]/60">
+                          + Depósito reembolsable: <span className="font-semibold text-[#1e1b18]/80">{formatCOP(costume.depositPrice)}</span>
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {costume.salePrice ? (
                     <div className="rounded-xl border border-[#a8001a]/15 bg-white/60 px-3 py-2.5 space-y-0.5">
                       <p className="text-sm font-bold text-[#1e1b18]">
