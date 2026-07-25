@@ -1,6 +1,22 @@
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-25
+
+### Added
+- Tallas de niño (4, 6, 8, 10, 12, 14, 16) disponibles junto a las tallas de adulto (XS-XXL) en cada disfraz.
+- Las URLs de ficha de disfraz ahora usan el slug (`/catalogo/<slug>`) en vez del uuid, con redirección automática desde enlaces antiguos por uuid.
+- Nueva pestaña **Telas y Accesorios** en el panel Admin, con CRUD completo (crear, editar, eliminar); el borrado se bloquea si la tela/accesorio está en uso por algún disfraz.
+- Búsqueda rápida por texto en las vistas Tabla/Lista/Galería de Disfraces y en las listas de Telas y Accesorios.
+- Autocompletado del texto alternativo de cada imagen con el nombre del disfraz al subir imágenes en la Galería.
+- Tags de telas y accesorios seleccionados, visibles debajo de cada checklist en la Ficha técnica.
+- Migración `supabase/011_child_sizes_and_optional_rental.sql`: agrega las tallas de niño al enum `costume_size_enum` y vuelve opcional `costumes.rental_price`.
+
 ### Changed
+- El precio de alquiler y la descripción dejan de ser obligatorios al crear/editar un disfraz en Admin; se ocultan en catálogo/ficha cuando no están definidos.
+- Los campos de precio en Admin (alquiler, venta, depósito) ahora muestran una máscara de moneda en vivo (ej. `$ 150.000`).
+- Se quitó la funcionalidad "Ordenar Por" del catálogo público.
+- El panel Admin - Disfraces usa un layout de 2 columnas en escritorio (listado a la izquierda, formulario/galería/ficha técnica a la derecha), con la altura del listado sincronizada dinámicamente para terminar justo donde termina la Ficha técnica.
+- La vista "Lista" del listado de Disfraces pasó de una columna a un grid de 3 columnas en escritorio; ya no muestra el slug (tampoco la vista "Tabla").
 - `docs/specs/specs_done/admin_insights_dashboard.spec.md`: se acotó definitivamente a la Fase 1 (ya implementada); las "propuestas adicionales" (tasa de interés, valor gestionado, destacados sin movimiento, estacionalidad, exportar CSV) se trasladaron a `docs/specs/specs_freeze/admin_insights_dashboard_fase2.spec.md`, en espera sin fecha definida.
 - `AGENTS.md`: se documentó el propósito de la carpeta `docs/specs/specs_freeze` (specs en espera indefinida, ni pendientes activas ni implementadas).
 
