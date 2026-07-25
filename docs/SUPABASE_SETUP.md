@@ -43,6 +43,7 @@ Ejecuta en este orden exacto:
 8. `supabase/008_deposit_price.sql`
 9. `supabase/009_costume_events.sql`
 10. `supabase/010_rental_history.sql`
+11. `supabase/011_child_sizes_and_optional_rental.sql`
 
 ## Opcion A: SQL Editor (Dashboard)
 

@@ -10,8 +10,7 @@ interface CatalogoProps {
   costumes: Costume[];
 }
 
-type SortOption = 'default' | 'price-asc' | 'price-desc' | 'rating-desc';
-const categoryOptions: CatalogCategory[] = ['Todos', 'Cumbia', 'Garabato', 'Mapalé', 'Marimonda', 'Negrita Puloy', 'Congo', 'Monocuco', 'Muerte', 'Fantasía'];
+const categoryOptions: CatalogCategory[] =['Todos', 'Cumbia', 'Garabato', 'Mapalé', 'Marimonda', 'Negrita Puloy', 'Congo', 'Monocuco', 'Muerte', 'Fantasía'];
 const preferredSizeOrder = ['4', '6', '8', '10', '12', '14', '16', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 export default function Catalogo({ costumes }: CatalogoProps) {
@@ -25,7 +24,6 @@ export default function Catalogo({ costumes }: CatalogoProps) {
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<SortOption>('default');
 
   const { contactInfo } = usePublicData();
 
@@ -97,17 +95,8 @@ export default function Catalogo({ costumes }: CatalogoProps) {
       result = result.filter((c) => c.sizes.some((size) => selectedSizes.includes(size)));
     }
 
-    // Sorting
-    if (sortBy === 'price-asc') {
-      result.sort((a, b) => a.rentalPrice - b.rentalPrice);
-    } else if (sortBy === 'price-desc') {
-      result.sort((a, b) => b.rentalPrice - a.rentalPrice);
-    } else if (sortBy === 'rating-desc') {
-      result.sort((a, b) => b.rating - a.rating);
-    }
-
     return result;
-  }, [searchAndCategoryFilteredCostumes, selectedSizes, sortBy]);
+  }, [searchAndCategoryFilteredCostumes, selectedSizes]);
 
   const availableSizes = useMemo<string[]>(() => {
     const sizeSource = selectedSizes.length > 0 && filteredCostumes.length > 0
@@ -143,7 +132,6 @@ export default function Catalogo({ costumes }: CatalogoProps) {
     setSearchQuery('');
     onCategoryChange('Todos');
     setSelectedSizes([]);
-    setSortBy('default');
   };
 
   return (
@@ -275,21 +263,6 @@ export default function Catalogo({ costumes }: CatalogoProps) {
                 )}
               </div>
             </div>
-
-            {/* 4. Sort Dropdown */}
-            <div className="space-y-2 border-t border-[#a8001a]/10 pt-4">
-              <label className="text-xs font-bold text-[#1e1b18]/70 uppercase tracking-wide font-mono block">
-                Ordenar Por
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="w-full px-3 py-2 border border-[#a8001a]/10 rounded-xl text-sm outline-none bg-white focus:border-[#a8001a] cursor-pointer"
-              >
-                <option value="default">Recomendados</option>
-                <option value="rating-desc">Calidad: Mayor Calificación</option>
-              </select>
-            </div>
           </aside>
 
           {/* Costume Cards Grid */}
@@ -389,9 +362,11 @@ export default function Catalogo({ costumes }: CatalogoProps) {
                             {costume.description}
                           </p>
                           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 pt-1 font-mono">
-                            <span className="text-sm font-bold text-[#a8001a]">
-                              Alquiler: {formatCOP(costume.rentalPrice)}
-                            </span>
+                            {costume.rentalPrice ? (
+                              <span className="text-sm font-bold text-[#a8001a]">
+                                Alquiler: {formatCOP(costume.rentalPrice)}
+                              </span>
+                            ) : null}
                             {costume.salePrice ? (
                               <span className="text-xs font-semibold text-[#1e1b18]/60">
                                 Venta: {formatCOP(costume.salePrice)}
@@ -403,7 +378,7 @@ export default function Catalogo({ costumes }: CatalogoProps) {
                         {/* Actions buttons */}
                         <div className="pt-2 flex items-center gap-2">
                           <button
-                            onClick={() => navigate(`/catalogo/${costume.id}`)}
+                            onClick={() => navigate(`/catalogo/${costume.slug}`)}
                             className="flex-1 py-2.5 bg-[#a8001a]/10 hover:bg-[#a8001a] text-[#a8001a] hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center space-x-1 border border-transparent hover:shadow-md cursor-pointer"
                             id={`details-btn-${costume.id}`}
                           >

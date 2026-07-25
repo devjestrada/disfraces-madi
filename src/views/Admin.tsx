@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabaseAdmin } from '../lib/supabase';
 import Toast, { type ToastMessage, type ToastVariant } from '../components/Toast';
@@ -13,13 +13,16 @@ import type {
   AdminSiteAsset,
   AdminSiteStats,
   AdminWorkingHour,
+  CostumeSize,
 } from '../types';
 import {
   createAccessory,
   createCostume,
   createFabric,
+  deleteAccessory,
   deleteCostume,
   deleteCostumeImage,
+  deleteFabric,
   fetchAdminCostumes,
   fetchAdminLookups,
   fetchCostumeRelations,
@@ -35,11 +38,14 @@ import {
   saveWorkingHours,
   setPrimaryCostumeImage,
   toggleCostumeFlag,
+  updateAccessory,
   uploadSiteAsset,
   updateCostume,
   updateCostumeImageAltText,
+  updateFabric,
   uploadCostumeImage,
 } from '../services/adminService';
+import { formatCOPInput, parseCOPInput } from '../utils/format';
 
 const InsightsSection = lazy(() => import('./admin/InsightsSection'));
 
@@ -80,7 +86,7 @@ const EMPTY_FORM: CostumeFormState = {
   featured: false,
 };
 
-const SIZE_OPTIONS: ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const SIZE_OPTIONS: CostumeSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '4', '6', '8', '10', '12', '14', '16'];
 
 const EMPTY_SITE_STATS: AdminSiteStats = {
   years_of_tradition: '',
@@ -124,8 +130,15 @@ export default function Admin() {
   const [isLoadingPanelData, setIsLoadingPanelData] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
-  const [activeSection, setActiveSection] = useState<'disfraces' | 'insights' | 'configuracion'>('disfraces');
+  const [activeSection, setActiveSection] = useState<
+    'disfraces' | 'insights' | 'telas-accesorios' | 'configuracion'
+  >('disfraces');
   const [viewMode, setViewMode] = useState<'tabla' | 'lista' | 'galeria'>('lista');
+  const disfracesRightColumnRef = useRef<HTMLDivElement | null>(null);
+  const [disfracesLeftColumnHeight, setDisfracesLeftColumnHeight] = useState<number | undefined>(undefined);
+  const [costumeSearchQuery, setCostumeSearchQuery] = useState('');
+  const [fabricSearchQuery, setFabricSearchQuery] = useState('');
+  const [accessorySearchQuery, setAccessorySearchQuery] = useState('');
   const [images, setImages] = useState<AdminCostumeImage[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
@@ -138,10 +151,14 @@ export default function Admin() {
   const [detailsText, setDetailsText] = useState('');
   const [selectedFabricIds, setSelectedFabricIds] = useState<string[]>([]);
   const [selectedAccessoryIds, setSelectedAccessoryIds] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<CostumeSize[]>([]);
   const [newFabricName, setNewFabricName] = useState('');
   const [newAccessoryName, setNewAccessoryName] = useState('');
   const [isSavingRelations, setIsSavingRelations] = useState(false);
+  const [editingFabric, setEditingFabric] = useState<{ id: string; name: string } | null>(null);
+  const [editingAccessory, setEditingAccessory] = useState<{ id: string; name: string } | null>(null);
+  const [newFabricNameTab, setNewFabricNameTab] = useState('');
+  const [newAccessoryNameTab, setNewAccessoryNameTab] = useState('');
   const [siteStats, setSiteStats] = useState<AdminSiteStats>(EMPTY_SITE_STATS);
   const [contactInfo, setContactInfo] = useState<AdminContactInfo>(EMPTY_CONTACT);
   const [workingHours, setWorkingHours] = useState<Array<{ days: string; hours: string }>>([]);
@@ -159,6 +176,35 @@ export default function Admin() {
     () => costumes.find((item) => item.id === selectedCostumeId) ?? null,
     [costumes, selectedCostumeId]
   );
+
+  const filteredAdminCostumes = useMemo(() => {
+    const query = costumeSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return costumes;
+    }
+    return costumes.filter((costume) =>
+      [costume.name, costume.slug, costume.category_name ?? '']
+        .join(' ')
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [costumes, costumeSearchQuery]);
+
+  const filteredFabrics = useMemo(() => {
+    const query = fabricSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return fabrics;
+    }
+    return fabrics.filter((fabric) => fabric.name.toLowerCase().includes(query));
+  }, [fabrics, fabricSearchQuery]);
+
+  const filteredAccessories = useMemo(() => {
+    const query = accessorySearchQuery.trim().toLowerCase();
+    if (!query) {
+      return accessories;
+    }
+    return accessories.filter((accessory) => accessory.name.toLowerCase().includes(query));
+  }, [accessories, accessorySearchQuery]);
 
   useEffect(() => {
     let isMounted = true;
@@ -357,6 +403,51 @@ export default function Admin() {
     }
   }, [selectedCostumeId]);
 
+  useLayoutEffect(() => {
+    if (activeSection !== 'disfraces') {
+      return;
+    }
+
+    const node = disfracesRightColumnRef.current;
+    if (!node) {
+      return;
+    }
+
+    const updateHeight = () => {
+      setDisfracesLeftColumnHeight(
+        window.innerWidth >= 1024 ? node.getBoundingClientRect().height : undefined
+      );
+    };
+
+    // Medicion inmediata (cubre el cambio que disparo este efecto) + un
+    // ResizeObserver como respaldo para crecimiento asincrono que no está
+    // atado a ninguno de los deps de abajo (ej. imagenes de la galeria
+    // terminando de cargar).
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+
+    if (typeof ResizeObserver === 'undefined') {
+      return () => window.removeEventListener('resize', updateHeight);
+    }
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, [
+    activeSection,
+    selectedCostumeId,
+    images.length,
+    uploadQueue.length,
+    fabrics.length,
+    accessories.length,
+    selectedFabricIds.length,
+    selectedAccessoryIds.length,
+  ]);
+
   const handleSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -403,7 +494,7 @@ export default function Admin() {
     setter(values.includes(value) ? values.filter((item) => item !== value) : [...values, value]);
   };
 
-  const toggleSize = (size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL') => {
+  const toggleSize = (size: CostumeSize) => {
     setSelectedSizes((prev) =>
       prev.includes(size) ? prev.filter((item) => item !== size) : [...prev, size]
     );
@@ -431,6 +522,94 @@ export default function Admin() {
     } catch (error) {
       notifyError(error);
     }
+  };
+
+  const handleCreateFabricTab = async () => {
+    setToast(null);
+    try {
+      const created = await createFabric(newFabricNameTab);
+      setFabrics((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setNewFabricNameTab('');
+      notify('Tela creada.');
+    } catch (error) {
+      notifyError(error);
+    }
+  };
+
+  const handleCreateAccessoryTab = async () => {
+    setToast(null);
+    try {
+      const created = await createAccessory(newAccessoryNameTab);
+      setAccessories((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setNewAccessoryNameTab('');
+      notify('Accesorio creado.');
+    } catch (error) {
+      notifyError(error);
+    }
+  };
+
+  const handleUpdateFabric = async (id: string, name: string) => {
+    setToast(null);
+    try {
+      const updated = await updateFabric(id, name);
+      setFabrics((prev) =>
+        prev.map((item) => (item.id === id ? updated : item)).sort((a, b) => a.name.localeCompare(b.name))
+      );
+      setEditingFabric(null);
+      notify('Tela actualizada.');
+    } catch (error) {
+      notifyError(error);
+    }
+  };
+
+  const handleDeleteFabric = (id: string, name: string) => {
+    setConfirmState({
+      message: `Eliminar la tela "${name}"? Esta accion no se puede deshacer.`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        setToast(null);
+        try {
+          await deleteFabric(id);
+          setFabrics((prev) => prev.filter((item) => item.id !== id));
+          setSelectedFabricIds((prev) => prev.filter((item) => item !== id));
+          notify('Tela eliminada.');
+        } catch (error) {
+          notifyError(error);
+        }
+      },
+    });
+  };
+
+  const handleUpdateAccessory = async (id: string, name: string) => {
+    setToast(null);
+    try {
+      const updated = await updateAccessory(id, name);
+      setAccessories((prev) =>
+        prev.map((item) => (item.id === id ? updated : item)).sort((a, b) => a.name.localeCompare(b.name))
+      );
+      setEditingAccessory(null);
+      notify('Accesorio actualizado.');
+    } catch (error) {
+      notifyError(error);
+    }
+  };
+
+  const handleDeleteAccessory = (id: string, name: string) => {
+    setConfirmState({
+      message: `Eliminar el accesorio "${name}"? Esta accion no se puede deshacer.`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        setToast(null);
+        try {
+          await deleteAccessory(id);
+          setAccessories((prev) => prev.filter((item) => item.id !== id));
+          setSelectedAccessoryIds((prev) => prev.filter((item) => item !== id));
+          notify('Accesorio eliminado.');
+        } catch (error) {
+          notifyError(error);
+        }
+      },
+    });
   };
 
   const handleSaveRelations = async () => {
@@ -540,18 +719,18 @@ export default function Admin() {
         category_id: form.category_id,
         description: form.description.trim(),
         designer_id: form.designer_id || null,
-        rental_price: Number(form.rental_price),
+        rental_price: form.rental_price.trim() ? Number(form.rental_price) : null,
         sale_price: form.sale_price.trim() ? Number(form.sale_price) : null,
         deposit_price: form.deposit_price.trim() ? Number(form.deposit_price) : null,
         is_available: form.is_available,
         featured: form.featured,
       };
 
-      if (!payload.name || !payload.slug || !payload.category_id || !payload.description) {
-        throw new Error('Completa nombre, slug, categoria y descripcion.');
+      if (!payload.name || !payload.slug || !payload.category_id) {
+        throw new Error('Completa nombre, slug y categoria.');
       }
 
-      if (Number.isNaN(payload.rental_price)) {
+      if (payload.rental_price !== null && Number.isNaN(payload.rental_price)) {
         throw new Error('Debes indicar un valor numerico para precio de alquiler.');
       }
 
@@ -667,6 +846,7 @@ export default function Admin() {
         try {
           await uploadCostumeImage(selectedCostumeId, file, {
             makePrimary: !hadPrimaryAlready && currentIndex === 0,
+            altText: form.name,
           });
           updateQueueItem(item.id, { status: 'done' });
           successCount += 1;
@@ -836,7 +1016,7 @@ export default function Admin() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 py-10">
+    <section className="mx-auto w-full max-w-7xl px-4 py-10">
       <ConfirmDialog
         open={Boolean(confirmState)}
         message={confirmState?.message ?? ''}
@@ -880,6 +1060,7 @@ export default function Admin() {
               [
                 { id: 'disfraces', label: 'Disfraces' },
                 { id: 'insights', label: 'Insights' },
+                { id: 'telas-accesorios', label: 'Telas y Accesorios' },
                 { id: 'configuracion', label: 'Configuracion del sitio' },
               ] as const
             ).map((section) => (
@@ -900,8 +1081,15 @@ export default function Admin() {
           <Toast toast={toast} onDismiss={() => setToast(null)} />
 
           {activeSection === 'disfraces' ? (
-            <div className="space-y-6">
-              <div className="rounded-2xl border border-[#E6D0C9] bg-white p-4 shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-6">
+              <div
+                className="flex flex-col overflow-hidden rounded-2xl border border-[#E6D0C9] bg-white p-4 shadow-sm"
+                style={
+                  disfracesLeftColumnHeight
+                    ? { height: `${disfracesLeftColumnHeight}px` }
+                    : { maxHeight: '80vh' }
+                }
+              >
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <h2 className="font-serif text-xl text-[#4A1F1F]">Disfraces</h2>
                   <div className="flex flex-wrap items-center gap-2">
@@ -935,11 +1123,18 @@ export default function Admin() {
                   </div>
                 </div>
 
+                <input
+                  value={costumeSearchQuery}
+                  onChange={(event) => setCostumeSearchQuery(event.target.value)}
+                  placeholder="Buscar por nombre, slug o categoria..."
+                  className="mb-3 w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                />
+
                 {isLoadingPanelData ? <p className="text-sm text-[#6E4B4B]">Cargando catalogo...</p> : null}
 
                 {viewMode === 'lista' ? (
-                  <div className="max-h-[764px] space-y-3 overflow-y-auto pr-1">
-                    {costumes.map((costume) => (
+                  <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredAdminCostumes.map((costume) => (
                       <article
                         key={costume.id}
                         className={`rounded-xl border p-3 ${
@@ -953,13 +1148,12 @@ export default function Admin() {
                           onClick={() => hydrateFormFromCostume(costume)}
                         >
                           <h3 className="text-sm font-semibold text-[#4A1F1F]">{costume.name}</h3>
-                          <p className="text-xs text-[#6E4B4B]">/{costume.slug}</p>
                           <p className="mt-1 text-xs text-[#6E4B4B]">
                             {costume.category_name ?? 'Sin categoria'}
                           </p>
                         </button>
 
-                        <div className="mt-2 flex items-center gap-2">
+                        <div className="mt-2 flex flex-col items-start gap-1.5">
                           <button
                             onClick={() => handleToggleFromList(costume, 'is_available')}
                             className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
@@ -987,7 +1181,7 @@ export default function Admin() {
                 ) : null}
 
                 {viewMode === 'tabla' ? (
-                  <div className="max-h-[600px] overflow-y-auto rounded-xl border border-[#EFE1DB]">
+                  <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-[#EFE1DB]">
                     <table className="w-full text-left text-sm">
                       <thead className="sticky top-0 bg-[#FFF8F5] text-xs font-semibold uppercase tracking-wide text-[#6E4B4B]">
                         <tr>
@@ -998,7 +1192,7 @@ export default function Admin() {
                         </tr>
                       </thead>
                       <tbody>
-                        {costumes.map((costume) => (
+                        {filteredAdminCostumes.map((costume) => (
                           <tr
                             key={costume.id}
                             className={`border-t border-[#EFE1DB] ${
@@ -1011,7 +1205,6 @@ export default function Admin() {
                                 className="text-left font-semibold text-[#4A1F1F] hover:text-[#A8001A]"
                               >
                                 {costume.name}
-                                <span className="block text-xs font-normal text-[#6E4B4B]">/{costume.slug}</span>
                               </button>
                             </td>
                             <td className="px-3 py-2 text-[#6E4B4B]">{costume.category_name ?? 'Sin categoria'}</td>
@@ -1047,8 +1240,8 @@ export default function Admin() {
                 ) : null}
 
                 {viewMode === 'galeria' ? (
-                  <div className="grid max-h-[1400px] gap-4 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
-                    {costumes.map((costume) => (
+                  <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
+                    {filteredAdminCostumes.map((costume) => (
                       <article
                         key={costume.id}
                         className={`cursor-pointer rounded-xl border p-3 ${
@@ -1105,6 +1298,7 @@ export default function Admin() {
                 ) : null}
               </div>
 
+              <div className="space-y-6" ref={disfracesRightColumnRef}>
               <form
               onSubmit={handleSaveCostume}
               className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm"
@@ -1181,37 +1375,33 @@ export default function Admin() {
                 <label className="text-sm text-[#4A1F1F]">
                   Precio alquiler (interno)
                   <input
-                    value={form.rental_price}
-                    onChange={(event) => handleFormField('rental_price', event.target.value)}
+                    value={formatCOPInput(form.rental_price)}
+                    onChange={(event) => handleFormField('rental_price', parseCOPInput(event.target.value))}
                     className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                    type="number"
-                    min="0"
-                    step="1000"
-                    required
+                    type="text"
+                    inputMode="numeric"
                   />
                 </label>
 
                 <label className="text-sm text-[#4A1F1F]">
                   Precio venta (interno)
                   <input
-                    value={form.sale_price}
-                    onChange={(event) => handleFormField('sale_price', event.target.value)}
+                    value={formatCOPInput(form.sale_price)}
+                    onChange={(event) => handleFormField('sale_price', parseCOPInput(event.target.value))}
                     className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                    type="number"
-                    min="0"
-                    step="1000"
+                    type="text"
+                    inputMode="numeric"
                   />
                 </label>
 
                 <label className="text-sm text-[#4A1F1F]">
                   Deposito (interno)
                   <input
-                    value={form.deposit_price}
-                    onChange={(event) => handleFormField('deposit_price', event.target.value)}
+                    value={formatCOPInput(form.deposit_price)}
+                    onChange={(event) => handleFormField('deposit_price', parseCOPInput(event.target.value))}
                     className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                    type="number"
-                    min="0"
-                    step="1000"
+                    type="text"
+                    inputMode="numeric"
                   />
                 </label>
 
@@ -1221,7 +1411,6 @@ export default function Admin() {
                     value={form.description}
                     onChange={(event) => handleFormField('description', event.target.value)}
                     className="mt-1 min-h-24 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                    required
                   />
                 </label>
 
@@ -1448,6 +1637,20 @@ export default function Admin() {
                           </label>
                         ))}
                       </div>
+                      {selectedFabricIds.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {fabrics
+                            .filter((fabric) => selectedFabricIds.includes(fabric.id))
+                            .map((fabric) => (
+                              <span
+                                key={fabric.id}
+                                className="rounded-full border border-[#A8001A]/30 bg-[#FFF4F6] px-2.5 py-1 text-xs font-semibold text-[#A8001A]"
+                              >
+                                {fabric.name}
+                              </span>
+                            ))}
+                        </div>
+                      ) : null}
                     </div>
 
                     <div>
@@ -1485,6 +1688,20 @@ export default function Admin() {
                           </label>
                         ))}
                       </div>
+                      {selectedAccessoryIds.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {accessories
+                            .filter((accessory) => selectedAccessoryIds.includes(accessory.id))
+                            .map((accessory) => (
+                              <span
+                                key={accessory.id}
+                                className="rounded-full border border-[#A8001A]/30 bg-[#FFF4F6] px-2.5 py-1 text-xs font-semibold text-[#A8001A]"
+                              >
+                                {accessory.name}
+                              </span>
+                            ))}
+                        </div>
+                      ) : null}
                     </div>
 
                     <div>
@@ -1510,6 +1727,145 @@ export default function Admin() {
                 </div>
               )}
             </section>
+              </div>
+            </div>
+          ) : null}
+
+          {activeSection === 'telas-accesorios' ? (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <div className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
+                <h2 className="font-serif text-xl text-[#4A1F1F]">Telas</h2>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={newFabricNameTab}
+                    onChange={(event) => setNewFabricNameTab(event.target.value)}
+                    placeholder="Nueva tela"
+                    className="w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateFabricTab}
+                    className="rounded-lg border border-[#4A1F1F] px-3 py-2 text-xs font-semibold text-[#4A1F1F]"
+                  >
+                    Crear
+                  </button>
+                </div>
+                <input
+                  value={fabricSearchQuery}
+                  onChange={(event) => setFabricSearchQuery(event.target.value)}
+                  placeholder="Buscar tela..."
+                  className="mt-3 w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                />
+                <ul className="mt-4 space-y-2">
+                  {filteredFabrics.map((fabric) => (
+                    <li
+                      key={fabric.id}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-[#EFE1DB] px-3 py-2"
+                    >
+                      {editingFabric?.id === fabric.id ? (
+                        <input
+                          value={editingFabric.name}
+                          onChange={(event) => setEditingFabric({ id: fabric.id, name: event.target.value })}
+                          className="w-full rounded-lg border border-[#D6B8AE] px-2 py-1 text-sm"
+                        />
+                      ) : (
+                        <span className="text-sm text-[#4A1F1F]">{fabric.name}</span>
+                      )}
+                      <div className="flex shrink-0 gap-1">
+                        {editingFabric?.id === fabric.id ? (
+                          <button
+                            onClick={() => handleUpdateFabric(fabric.id, editingFabric.name)}
+                            className="rounded border border-[#A8001A] px-2 py-1 text-xs text-[#A8001A]"
+                          >
+                            Guardar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setEditingFabric({ id: fabric.id, name: fabric.name })}
+                            className="rounded border border-[#4A1F1F] px-2 py-1 text-xs text-[#4A1F1F]"
+                          >
+                            Editar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteFabric(fabric.id, fabric.name)}
+                          className="rounded border border-[#A8001A] px-2 py-1 text-xs text-[#A8001A]"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
+                <h2 className="font-serif text-xl text-[#4A1F1F]">Accesorios</h2>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={newAccessoryNameTab}
+                    onChange={(event) => setNewAccessoryNameTab(event.target.value)}
+                    placeholder="Nuevo accesorio"
+                    className="w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateAccessoryTab}
+                    className="rounded-lg border border-[#4A1F1F] px-3 py-2 text-xs font-semibold text-[#4A1F1F]"
+                  >
+                    Crear
+                  </button>
+                </div>
+                <input
+                  value={accessorySearchQuery}
+                  onChange={(event) => setAccessorySearchQuery(event.target.value)}
+                  placeholder="Buscar accesorio..."
+                  className="mt-3 w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                />
+                <ul className="mt-4 space-y-2">
+                  {filteredAccessories.map((accessory) => (
+                    <li
+                      key={accessory.id}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-[#EFE1DB] px-3 py-2"
+                    >
+                      {editingAccessory?.id === accessory.id ? (
+                        <input
+                          value={editingAccessory.name}
+                          onChange={(event) =>
+                            setEditingAccessory({ id: accessory.id, name: event.target.value })
+                          }
+                          className="w-full rounded-lg border border-[#D6B8AE] px-2 py-1 text-sm"
+                        />
+                      ) : (
+                        <span className="text-sm text-[#4A1F1F]">{accessory.name}</span>
+                      )}
+                      <div className="flex shrink-0 gap-1">
+                        {editingAccessory?.id === accessory.id ? (
+                          <button
+                            onClick={() => handleUpdateAccessory(accessory.id, editingAccessory.name)}
+                            className="rounded border border-[#A8001A] px-2 py-1 text-xs text-[#A8001A]"
+                          >
+                            Guardar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setEditingAccessory({ id: accessory.id, name: accessory.name })}
+                            className="rounded border border-[#4A1F1F] px-2 py-1 text-xs text-[#4A1F1F]"
+                          >
+                            Editar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteAccessory(accessory.id, accessory.name)}
+                          className="rounded border border-[#A8001A] px-2 py-1 text-xs text-[#A8001A]"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           ) : null}
 

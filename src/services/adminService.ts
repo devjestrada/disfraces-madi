@@ -11,6 +11,7 @@ import type {
   AdminSiteStats,
   AdminContactInfo,
   AdminWorkingHour,
+  CostumeSize,
 } from '../types';
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -26,7 +27,7 @@ function toAdminCostume(record: any): AdminCostume {
     description: record.description,
     designer_id: record.designer_id,
     designer_name: record.designers?.name ?? null,
-    rental_price: Number(record.rental_price ?? 0),
+    rental_price: record.rental_price !== null && record.rental_price !== undefined ? Number(record.rental_price) : null,
     sale_price: record.sale_price !== null ? Number(record.sale_price) : null,
     deposit_price: record.deposit_price !== null && record.deposit_price !== undefined ? Number(record.deposit_price) : null,
     is_available: Boolean(record.is_available),
@@ -390,6 +391,86 @@ export async function createAccessory(name: string) {
   return data as AdminNamedOption;
 }
 
+export async function updateFabric(id: string, name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    throw new Error('Nombre de tela requerido.');
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('fabrics')
+    .update({ name: trimmed })
+    .eq('id', id)
+    .select('id, name')
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as AdminNamedOption;
+}
+
+export async function deleteFabric(id: string) {
+  const { count, error: countError } = await supabaseAdmin
+    .from('costume_fabrics')
+    .select('costume_id', { count: 'exact', head: true })
+    .eq('fabric_id', id);
+
+  if (countError) {
+    throw new Error(countError.message);
+  }
+
+  if (count && count > 0) {
+    throw new Error(`No se puede eliminar: ${count} disfraz(ces) usan esta tela.`);
+  }
+
+  const { error } = await supabaseAdmin.from('fabrics').delete().eq('id', id);
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function updateAccessory(id: string, name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    throw new Error('Nombre de accesorio requerido.');
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('accessories')
+    .update({ name: trimmed })
+    .eq('id', id)
+    .select('id, name')
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as AdminNamedOption;
+}
+
+export async function deleteAccessory(id: string) {
+  const { count, error: countError } = await supabaseAdmin
+    .from('costume_accessories')
+    .select('costume_id', { count: 'exact', head: true })
+    .eq('accessory_id', id);
+
+  if (countError) {
+    throw new Error(countError.message);
+  }
+
+  if (count && count > 0) {
+    throw new Error(`No se puede eliminar: ${count} disfraz(ces) usan este accesorio.`);
+  }
+
+  const { error } = await supabaseAdmin.from('accessories').delete().eq('id', id);
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function fetchCostumeRelations(costumeId: string): Promise<AdminCostumeRelations> {
   const [detailsResult, fabricsResult, accessoriesResult, sizesResult] = await Promise.all([
     supabaseAdmin
@@ -435,7 +516,7 @@ export async function saveCostumeRelations(
     details: string[];
     fabricIds: string[];
     accessoryIds: string[];
-    sizes: ('XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL')[];
+    sizes: CostumeSize[];
   }
 ) {
   const detailsClean = payload.details.map((item) => item.trim()).filter(Boolean);
