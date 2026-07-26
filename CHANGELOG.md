@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-26
+
+### Added
+- Panel Admin - Telas y Accesorios: conteo de disfraces asociados a cada tela/accesorio, con tooltip al hover que detalla los nombres.
+
+### Changed
+- Inicio: la sección "Categorías Destacadas" pasó de mostrar 4 categorías fijas a tarjetas dinámicas por cada categoría del catálogo con disfraces marcados como destacados, con foto elegida al azar entre ellos en cada carga de página; las categorías sin destacados dejan de mostrarse.
+
+### Fixed
+- Panel Admin - Disfraces: el contenedor de las vistas Lista/Galería ya no mantenía una altura fija igualada al formulario cuando una búsqueda dejaba pocos resultados, dejando un hueco vacío; ahora se ajusta al contenido filtrado.
+
 ## [0.7.0] - 2026-07-25
 
 ### Added
