@@ -2,9 +2,17 @@ import React from 'react';
 import { Mail, Clock, Sparkles } from 'lucide-react';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
+import { useDocumentMeta } from '../hooks/useSeo';
 
 export default function Contacto() {
   const { contactInfo } = usePublicData();
+
+  useDocumentMeta({
+    title: 'Contacto y Cita Previa | Disfraces Madi',
+    description:
+      'Visitas exclusivas con cita previa en Barranquilla, Atlántico. Escríbenos por WhatsApp para agendar tu cita y probarte tu disfraz de Carnaval.',
+    path: '/contacto',
+  });
 
   return (
     <div className="bg-[#fff8f5] py-12" id="contacto-view-root">

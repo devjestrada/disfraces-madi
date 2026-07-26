@@ -13,7 +13,7 @@ export interface Costume {
   accessories: string[];
   sizes: CostumeSize[];
   primaryImage: string;
-  gallery: string[];
+  gallery: { url: string; alt: string }[];
   rentalPrice?: number;
   salePrice?: number;
   depositPrice?: number;

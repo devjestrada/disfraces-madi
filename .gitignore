@@ -3,6 +3,7 @@ non_public_assets/
 node_modules/
 build/
 dist/
+public/sitemap.xml
 coverage/
 .DS_Store
 *.log

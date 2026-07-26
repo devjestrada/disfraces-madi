@@ -44,6 +44,7 @@ Ejecuta en este orden exacto:
 9. `supabase/009_costume_events.sql`
 10. `supabase/010_rental_history.sql`
 11. `supabase/011_child_sizes_and_optional_rental.sql`
+12. `supabase/012_gallery_alt_text.sql`
 
 ## Opcion A: SQL Editor (Dashboard)
 

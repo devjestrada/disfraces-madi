@@ -6,6 +6,8 @@ import { usePublicData } from '../context/PublicDataContext';
 import { Costume } from '../types';
 import { formatCOP } from '../utils/format';
 import { trackCostumeView, trackWhatsAppClick } from '../services/trackingService';
+import { useDocumentMeta, useStructuredData } from '../hooks/useSeo';
+import { buildProductLd, buildBreadcrumbLd } from '../utils/structuredData';
 
 interface CatalogoDetailProps {
   costumeProp?: Costume;
@@ -31,6 +33,32 @@ export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetai
 
   const displayImage = activeImage || costume?.primaryImage || '';
   const displaySize = selectedSize || costume?.sizes[0] || '';
+
+  const detailPath = costume ? `/catalogo/${costume.slug}` : '/catalogo';
+
+  useDocumentMeta({
+    title: costume ? `${costume.name} | Alquiler y Venta | Disfraces Madi` : 'Disfraz | Disfraces Madi',
+    description: costume
+      ? costume.description.length > 155
+        ? `${costume.description.slice(0, 152)}...`
+        : costume.description
+      : 'Descubre nuestros disfraces artesanales del Carnaval de Barranquilla, disponibles para alquiler y venta.',
+    path: detailPath,
+    ogImage: costume?.primaryImage,
+    ogType: 'product',
+  });
+  useStructuredData('ld-product', costume ? buildProductLd(costume, detailPath) : null);
+  useStructuredData(
+    'ld-breadcrumb',
+    costume
+      ? buildBreadcrumbLd([
+          { name: 'Inicio', path: '/' },
+          { name: 'Catálogo', path: '/catalogo' },
+          { name: costume.category, path: `/catalogo?categoria=${costume.category}` },
+          { name: costume.name, path: detailPath },
+        ])
+      : null
+  );
 
   if (!costume) {
     if (isLoading) {
@@ -116,17 +144,18 @@ export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetai
             {/* Thumbnails list */}
             {costume.gallery.length > 1 && (
               <div className="grid grid-cols-3 gap-3" id="detail-thumbnails-grid">
-                {costume.gallery.map((imgUrl, index) => (
+                {costume.gallery.map((img, index) => (
                   <button
                     key={index}
-                    onClick={() => setActiveImage(imgUrl)}
+                    onClick={() => setActiveImage(img.url)}
                     className={`aspect-[4/5] lg:h-28 lg:aspect-auto rounded-xl overflow-hidden border-2 bg-gray-100 transition-all cursor-pointer ${
-                      displayImage === imgUrl ? 'border-[#a8001a] shadow-md scale-95' : 'border-[#a8001a]/10 hover:border-[#a8001a]/30'
+                      displayImage === img.url ? 'border-[#a8001a] shadow-md scale-95' : 'border-[#a8001a]/10 hover:border-[#a8001a]/30'
                     }`}
                   >
                     <img
-                      src={imgUrl}
-                      alt={`${costume.name} thumbnail ${index + 1}`}
+                      src={img.url}
+                      alt={img.alt || `${costume.name} thumbnail ${index + 1}`}
+                      loading="lazy"
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
                     />

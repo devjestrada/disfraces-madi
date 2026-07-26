@@ -10,7 +10,14 @@ function normalizeCostumeRecord(costume: any): Costume {
     ...costume,
     primaryImage: getPublicImageUrl(primaryImage),
     gallery: Array.isArray(gallery)
-      ? gallery.map((item) => getPublicImageUrl(item))
+      ? gallery.map((item) => {
+          const path = typeof item === 'string' ? item : item?.path;
+          const alt = typeof item === 'string' ? undefined : item?.alt;
+          return {
+            url: getPublicImageUrl(path ?? ''),
+            alt: alt || costume.name,
+          };
+        })
       : [],
     sizes: costume.sizes ?? [],
     details: costume.details ?? [],

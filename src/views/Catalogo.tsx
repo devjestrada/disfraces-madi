@@ -5,6 +5,8 @@ import { CatalogCategory, Costume } from '../types';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
 import { formatCOP } from '../utils/format';
+import { useDocumentMeta, useStructuredData } from '../hooks/useSeo';
+import { buildBreadcrumbLd } from '../utils/structuredData';
 
 interface CatalogoProps {
   costumes: Costume[];
@@ -26,6 +28,33 @@ export default function Catalogo({ costumes }: CatalogoProps) {
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
 
   const { contactInfo } = usePublicData();
+
+  useDocumentMeta({
+    title:
+      selectedCategory === 'Todos'
+        ? 'Catálogo de Disfraces de Carnaval | Disfraces Madi'
+        : `Disfraces de ${selectedCategory} | Disfraces Madi`,
+    description:
+      selectedCategory === 'Todos'
+        ? 'Explora nuestro catálogo de disfraces artesanales del Carnaval de Barranquilla: Cumbia, Garabato, Marimonda y más. Alquiler y venta con precios visibles.'
+        : `Alquiler y venta de disfraces de ${selectedCategory} del Carnaval de Barranquilla. Agenda tu visita y prueba tu disfraz antes de confirmar.`,
+    path: selectedCategory === 'Todos' ? '/catalogo' : `/catalogo?categoria=${selectedCategory}`,
+  });
+  useStructuredData(
+    'ld-breadcrumb',
+    buildBreadcrumbLd(
+      selectedCategory === 'Todos'
+        ? [
+            { name: 'Inicio', path: '/' },
+            { name: 'Catálogo', path: '/catalogo' },
+          ]
+        : [
+            { name: 'Inicio', path: '/' },
+            { name: 'Catálogo', path: '/catalogo' },
+            { name: selectedCategory, path: `/catalogo?categoria=${selectedCategory}` },
+          ]
+    )
+  );
 
   // Toggle size filter
   const handleSizeToggle = (size: string) => {
@@ -332,6 +361,7 @@ export default function Catalogo({ costumes }: CatalogoProps) {
                         <img
                           src={costume.primaryImage}
                           alt={costume.name}
+                          loading="lazy"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           referrerPolicy="no-referrer"
                         />
