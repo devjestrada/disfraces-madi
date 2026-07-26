@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabaseAdmin } from '../lib/supabase';
 import Toast, { type ToastMessage, type ToastVariant } from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
+import UsageTooltip from '../components/admin/UsageTooltip';
 import type {
   AdminCategory,
   AdminContactInfo,
@@ -23,10 +24,12 @@ import {
   deleteCostume,
   deleteCostumeImage,
   deleteFabric,
+  fetchAccessoryUsage,
   fetchAdminCostumes,
   fetchAdminLookups,
   fetchCostumeRelations,
   fetchCostumeImages,
+  fetchFabricUsage,
   fetchRelationLookups,
   fetchSiteConfig,
   getAdminImageUrl,
@@ -148,6 +151,8 @@ export default function Admin() {
   const altDebounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [fabrics, setFabrics] = useState<AdminNamedOption[]>([]);
   const [accessories, setAccessories] = useState<AdminNamedOption[]>([]);
+  const [fabricUsage, setFabricUsage] = useState<Map<string, string[]>>(new Map());
+  const [accessoryUsage, setAccessoryUsage] = useState<Map<string, string[]>>(new Map());
   const [detailsText, setDetailsText] = useState('');
   const [selectedFabricIds, setSelectedFabricIds] = useState<string[]>([]);
   const [selectedAccessoryIds, setSelectedAccessoryIds] = useState<string[]>([]);
@@ -290,6 +295,13 @@ export default function Admin() {
       const relationLookups = await fetchRelationLookups();
       setFabrics(relationLookups.fabrics);
       setAccessories(relationLookups.accessories);
+
+      const [loadedFabricUsage, loadedAccessoryUsage] = await Promise.all([
+        fetchFabricUsage(),
+        fetchAccessoryUsage(),
+      ]);
+      setFabricUsage(loadedFabricUsage);
+      setAccessoryUsage(loadedAccessoryUsage);
 
       const config = await fetchSiteConfig();
       setSiteStats(config.stats);
@@ -1083,10 +1095,10 @@ export default function Admin() {
           {activeSection === 'disfraces' ? (
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-6">
               <div
-                className="flex flex-col overflow-hidden rounded-2xl border border-[#E6D0C9] bg-white p-4 shadow-sm"
+                className="flex flex-col self-start overflow-hidden rounded-2xl border border-[#E6D0C9] bg-white p-4 shadow-sm"
                 style={
                   disfracesLeftColumnHeight
-                    ? { height: `${disfracesLeftColumnHeight}px` }
+                    ? { maxHeight: `${disfracesLeftColumnHeight}px` }
                     : { maxHeight: '80vh' }
                 }
               >
@@ -1771,7 +1783,8 @@ export default function Admin() {
                       ) : (
                         <span className="text-sm text-[#4A1F1F]">{fabric.name}</span>
                       )}
-                      <div className="flex shrink-0 gap-1">
+                      <div className="flex shrink-0 items-center gap-1">
+                        <UsageTooltip costumeNames={fabricUsage.get(fabric.id) ?? []} />
                         {editingFabric?.id === fabric.id ? (
                           <button
                             onClick={() => handleUpdateFabric(fabric.id, editingFabric.name)}
@@ -1839,7 +1852,8 @@ export default function Admin() {
                       ) : (
                         <span className="text-sm text-[#4A1F1F]">{accessory.name}</span>
                       )}
-                      <div className="flex shrink-0 gap-1">
+                      <div className="flex shrink-0 items-center gap-1">
+                        <UsageTooltip costumeNames={accessoryUsage.get(accessory.id) ?? []} />
                         {editingAccessory?.id === accessory.id ? (
                           <button
                             onClick={() => handleUpdateAccessory(accessory.id, editingAccessory.name)}
