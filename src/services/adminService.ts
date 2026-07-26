@@ -353,6 +353,45 @@ export async function fetchRelationLookups() {
   };
 }
 
+function groupCostumeNamesById(rows: any[] | null, idField: string): Map<string, string[]> {
+  const usage = new Map<string, string[]>();
+  for (const row of rows ?? []) {
+    const related = Array.isArray(row.costumes) ? row.costumes[0] : row.costumes;
+    const name = related?.name;
+    if (!name) {
+      continue;
+    }
+    const list = usage.get(row[idField]) ?? [];
+    list.push(name);
+    usage.set(row[idField], list);
+  }
+  return usage;
+}
+
+export async function fetchFabricUsage(): Promise<Map<string, string[]>> {
+  const { data, error } = await supabaseAdmin
+    .from('costume_fabrics')
+    .select('fabric_id, costumes(name)');
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return groupCostumeNamesById(data, 'fabric_id');
+}
+
+export async function fetchAccessoryUsage(): Promise<Map<string, string[]>> {
+  const { data, error } = await supabaseAdmin
+    .from('costume_accessories')
+    .select('accessory_id, costumes(name)');
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return groupCostumeNamesById(data, 'accessory_id');
+}
+
 export async function createFabric(name: string) {
   const trimmed = name.trim();
   if (!trimmed) {

@@ -1,50 +1,97 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Sparkles, ArrowRight, Star, Calendar, Compass, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { ASSETS } from '../data';
 import { usePublicData } from '../context/PublicDataContext';
 import WhatsAppIcon from '../components/WhatsAppIcon';
-import type { CostumeCategory } from '../types';
+import type { Costume, CostumeCategory } from '../types';
+import useCostumes from '../hooks/useCostumes';
+
+const CATEGORY_ORDER: CostumeCategory[] = [
+  'Cumbia',
+  'Garabato',
+  'Mapalé',
+  'Marimonda',
+  'Negrita Puloy',
+  'Congo',
+  'Monocuco',
+  'Muerte',
+  'Fantasía'
+];
+
+const CATEGORY_COPY: Record<CostumeCategory, { name: string; desc: string }> = {
+  Cumbia: {
+    name: 'Cumbia',
+    desc: 'Polleras majestuosas y ritmo eterno para bailar con orgullo.'
+  },
+  Garabato: {
+    name: 'Garabato',
+    desc: 'Elegancia ancestral que encarna la danza del duelo y su espíritu.'
+  },
+  Mapalé: {
+    name: 'Mapalé',
+    desc: 'Fuerza ancestral y movimiento intenso con cada pisada.'
+  },
+  Marimonda: {
+    name: 'Marimonda',
+    desc: 'Picardía y color en cada máscara, el personaje más travieso del Carnaval.'
+  },
+  'Negrita Puloy': {
+    name: 'Negrita Puloy',
+    desc: 'Sabor y sátira barranquillera hechas disfraz, con el carisma que solo Puloy tiene.'
+  },
+  Congo: {
+    name: 'Congo',
+    desc: 'Guerreros de tradición africana que desfilan con fuerza y color.'
+  },
+  Monocuco: {
+    name: 'Monocuco',
+    desc: 'Misterio y elegancia bajo la máscara más enigmática del Carnaval.'
+  },
+  Muerte: {
+    name: 'Muerte',
+    desc: 'Sátira y humor negro que burlan a la muerte con picardía barranquillera.'
+  },
+  Fantasía: {
+    name: 'Fantasía',
+    desc: 'Trajes de ensueño que brillan en cada desfile y coronación.'
+  }
+};
 
 export default function Inicio() {
   const navigate = useNavigate();
-  const categories: Array<{
-    id: CostumeCategory;
-    name: string;
-    desc: string;
-    img: string;
-    badge: string;
-  }> = [
-    {
-      id: 'Cumbia',
-      name: 'Cumbia',
-      desc: 'Polleras majestuosas y ritmo eterno para bailar con orgullo.',
-      img: ASSETS.categoria_cumbia,
-      badge: 'Cumbia'
-    },
-    {
-      id: 'Fantasía',
-      name: 'Fantasía',
-      desc: 'Trajes de ensueño que brillan en cada desfile y coronación.',
-      img: ASSETS.categoria_fantasia,
-      badge: 'Fantasía'
-    },
-    {
-      id: 'Mapalé',
-      name: 'Mapalé',
-      desc: 'Fuerza ancestral y movimiento intenso con cada pisada.',
-      img: ASSETS.categoria_mapale,
-      badge: 'Mapalé'
-    },
-    {
-      id: 'Garabato',
-      name: 'Garabato',
-      desc: 'Elegancia ancestral que encarna la danza del duelo y su espíritu.',
-      img: ASSETS.categoria_garabato,
-      badge: 'Garabato'
+  const { costumes } = useCostumes();
+
+  const categories = useMemo(() => {
+    const featuredByCategory = new Map<CostumeCategory, Costume[]>();
+    for (const costume of costumes) {
+      if (!costume.featured) continue;
+      const list = featuredByCategory.get(costume.category) ?? [];
+      list.push(costume);
+      featuredByCategory.set(costume.category, list);
     }
-  ];
+
+    return CATEGORY_ORDER.flatMap((categoryId) => {
+      const featured = featuredByCategory.get(categoryId);
+      if (!featured || featured.length === 0) {
+        return [];
+      }
+
+      const pick = featured[Math.floor(Math.random() * featured.length)];
+      const copy = CATEGORY_COPY[categoryId];
+
+      return [
+        {
+          id: categoryId,
+          name: copy.name,
+          desc: copy.desc,
+          img: pick.primaryImage,
+          badge: copy.name
+        }
+      ];
+    });
+  }, [costumes]);
 
   const { contactInfo, siteStats, reviews } = usePublicData();
 
@@ -160,7 +207,7 @@ export default function Inicio() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="categories-grid">
-          {categories.map((category, idx) => (
+          {categories.map((category) => (
             <div
               key={category.id}
               onClick={() => navigate(`/catalogo?categoria=${encodeURIComponent(category.id)}`)}
