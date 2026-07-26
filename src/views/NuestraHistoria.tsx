@@ -2,9 +2,17 @@ import React from 'react';
 import { Compass, Sparkles, Quote, Award, Calendar, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ASSETS } from '../data';
+import { useDocumentMeta } from '../hooks/useSeo';
 
 export default function NuestraHistoria() {
   const navigate = useNavigate();
+
+  useDocumentMeta({
+    title: 'Nuestra Historia | Disfraces Madi',
+    description:
+      'Conoce la trayectoria artesanal del Atelier Madi: más de 25 años vistiendo el Carnaval de Barranquilla con disfraces confeccionados a mano por talento local.',
+    path: '/nuestra-historia',
+  });
 
 
   const coreValues = [

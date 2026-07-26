@@ -1,5 +1,18 @@
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-26
+
+### Added
+- Meta tags dinámicos por ruta (title, description, Open Graph, Twitter Card, canonical) para Inicio, Catálogo, ficha de disfraz, Servicios, Nuestra Historia y Contacto.
+- Datos estructurados JSON-LD: `LocalBusiness` en Inicio, `Product` (con precios y disponibilidad) y `BreadcrumbList` en catálogo y ficha de disfraz.
+- Favicon del sitio (a partir del logo del Atelier) y `og-image.jpg` para vistas previas de enlaces.
+- `robots.txt` (bloquea `/admin`) y `sitemap.xml` generado dinámicamente en cada build desde el catálogo de Supabase.
+- Migración `supabase/012_gallery_alt_text.sql`: expone el `alt_text` real de cada imagen de la galería (antes solo se usaba en Admin, nunca llegaba al frontend público).
+
+### Changed
+- `Costume.gallery` pasa de `string[]` a `{ url, alt }[]` para transportar el texto alternativo real de cada imagen; se actualizó la normalización de datos y la ficha de disfraz en consecuencia.
+- Imágenes del catálogo y miniaturas de la ficha de disfraz cargan con `loading="lazy"` para mejorar el rendimiento fuera del viewport inicial.
+
 ## [0.8.0] - 2026-07-26
 
 ### Added

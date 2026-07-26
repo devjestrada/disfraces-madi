@@ -7,6 +7,8 @@ import { usePublicData } from '../context/PublicDataContext';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import type { Costume, CostumeCategory } from '../types';
 import useCostumes from '../hooks/useCostumes';
+import { useDocumentMeta, useStructuredData } from '../hooks/useSeo';
+import { buildLocalBusinessLd } from '../utils/structuredData';
 
 const CATEGORY_ORDER: CostumeCategory[] = [
   'Cumbia',
@@ -94,6 +96,14 @@ export default function Inicio() {
   }, [costumes]);
 
   const { contactInfo, siteStats, reviews } = usePublicData();
+
+  useDocumentMeta({
+    title: 'Disfraces Madi | Alquiler y Venta de Disfraces del Carnaval de Barranquilla',
+    description:
+      'Disfraces artesanales de Cumbia, Garabato, Marimonda y más categorías del Carnaval de Barranquilla. Alquiler, venta y depósito reembolsable. Agenda tu visita con cita previa.',
+    path: '/',
+  });
+  useStructuredData('ld-local-business', buildLocalBusinessLd(contactInfo));
 
   return (
     <div className="bg-[#fff8f5]" id="inicio-view-root">

@@ -2,9 +2,17 @@ import React from 'react';
 import { Scissors, ShoppingBag, Clock3, Sparkles, Calendar, CheckCircle } from 'lucide-react';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
+import { useDocumentMeta } from '../hooks/useSeo';
 
 export default function Servicios() {
   const { contactInfo } = usePublicData();
+
+  useDocumentMeta({
+    title: 'Servicios | Disfraces Madi',
+    description:
+      'Alquiler presencial premium, diseño a medida y venta de disfraces artesanales del Carnaval de Barranquilla. Agenda tu visita y prueba tu disfraz antes de confirmar.',
+    path: '/servicios',
+  });
   const coreServices = [
     {
       icon: <Clock3 className="h-8 w-8 text-[#fdc003]" />,
