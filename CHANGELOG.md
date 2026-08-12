@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-12
+
+### Changed
+- Botón de acceso a Admin en el Navbar: ícono `User` a 22px con hover de fondo circular (según `DESIGN.md`), indicador de estado activo al estar en `/admin`, y reubicación al inicio del drawer mobile para evitar tener que hacer scroll para encontrarlo.
+
 ## [0.9.0] - 2026-07-26
 
 ### Added
