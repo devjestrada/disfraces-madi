@@ -22,6 +22,7 @@ function isNavItemActive(pathname: string, itemPath: string) {
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { pathname } = useLocation();
+  const isAdminActive = pathname.startsWith('/admin');
 
   return (
     <nav className="sticky top-0 z-50 bg-[#fff8f5]/95 backdrop-blur-md border-b border-[#a8001a]/10 shadow-sm" id="main-navbar">
@@ -80,9 +81,15 @@ export default function Navbar() {
               to="/admin"
               id="nav-link-admin"
               title="Acceso administrativo"
-              className="flex items-center gap-1.5 rounded-full border border-[#1e1b18]/15 px-3 py-1.5 text-xs font-medium text-[#1e1b18]/60 hover:text-[#1e1b18]/90 hover:border-[#1e1b18]/30 transition-colors cursor-pointer"
+              className={`group flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
+                isAdminActive
+                  ? 'bg-[#1e1b18]/5 border-[#1e1b18]/30 text-[#1e1b18]/90'
+                  : 'border-[#1e1b18]/15 text-[#1e1b18]/60 hover:text-[#1e1b18]/90 hover:border-[#1e1b18]/30'
+              }`}
             >
-              <User className="h-3.5 w-3.5" />
+              <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full transition-colors duration-150 group-hover:bg-[#f0e6e0]">
+                <User className="h-[22px] w-[22px]" strokeWidth={1.75} />
+              </span>
               <span>Admin</span>
             </Link>
           </div>
@@ -109,6 +116,16 @@ export default function Navbar() {
             id="mobile-nav-drawer"
           >
             <div className="px-4 pt-2 pb-6 space-y-2">
+              <Link
+                to="/admin"
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center gap-2 w-full text-left px-4 py-3 mb-2 rounded-xl text-sm font-medium border-b border-[#1e1b18]/10 pb-4 cursor-pointer transition-colors ${
+                  isAdminActive ? 'bg-[#1e1b18]/5 text-[#1e1b18]/90' : 'text-[#1e1b18]/60'
+                }`}
+              >
+                <User className="h-[22px] w-[22px]" strokeWidth={1.75} />
+                <span>Acceso administrativo</span>
+              </Link>
               {navItems.map((item) => {
                 const isActive = isNavItemActive(pathname, item.path);
                 return (
@@ -126,14 +143,6 @@ export default function Navbar() {
                   </Link>
                 );
               })}
-              <Link
-                to="/admin"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 w-full text-left px-4 py-3 mt-2 rounded-xl text-sm font-medium text-[#1e1b18]/60 border-t border-[#1e1b18]/10 pt-4 cursor-pointer"
-              >
-                <User className="h-4 w-4" />
-                <span>Acceso administrativo</span>
-              </Link>
             </div>
           </motion.div>
         )}
