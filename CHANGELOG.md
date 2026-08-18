@@ -1,5 +1,18 @@
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-17
+
+### Added
+- Compresión de imágenes a WebP (Canvas API) en el momento de subida desde Admin, tanto para imágenes de disfraces como para assets del sitio.
+- `scripts/optimize-existing-images.ts` (`npm run optimize-images`) para migrar a WebP redimensionado las imágenes ya subidas a Storage antes de este cambio; script manual, no forma parte del build.
+- `src/hooks/useHomeData.ts` para cargar `site_stats`/`reviews` solo en Inicio.
+
+### Changed
+- Las fuentes de Google se cargan vía `<link rel="preconnect">` + `<link rel="stylesheet">` en `index.html` en vez de `@import` bloqueante dentro de `index.css`; se recortó el peso 300 de Inter (sin uso en el proyecto).
+- Las primeras tarjetas del catálogo (visibles sin scroll) ya no usan `loading="lazy"`; la primera además prioriza su descarga con `fetchPriority="high"`.
+- `PublicDataContext` deja de cargar `site_stats`/`reviews` de forma global: solo `contactInfo`/`working_hours` se cargan en toda ruta (los necesitan Footer y WhatsAppButton); `/catalogo` y la ficha de disfraz dejan de disparar esas dos consultas.
+- Servicios y Nuestra Historia se cargan con `lazy()`/`Suspense`, igual que el panel Admin, para reducir el bundle inicial del sitio público.
+
 ## [0.10.0] - 2026-08-12
 
 ### Changed
