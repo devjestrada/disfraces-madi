@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchReviews, fetchSiteStats } from '../services/dataService';
+import { fetchSiteStats } from '../services/dataService';
 import { STATS } from '../data';
 import { Review, SiteStats } from '../types';
 
@@ -10,12 +10,19 @@ interface HomeData {
   error: string | null;
 }
 
-// site_stats y reviews solo se muestran en Inicio (contador de años/carnavales
-// y testimonios): se cargan aquí en vez de en PublicDataContext para que el
-// resto de rutas (catálogo, ficha, servicios, etc.) no disparen estas queries.
+// site_stats se muestra en Inicio (contador de años/carnavales): se carga
+// aquí en vez de en PublicDataContext para que el resto de rutas (catálogo,
+// ficha, servicios, etc.) no disparen esta query.
+//
+// `reviews` NO se trae por ahora: la sección de testimonios de Inicio.tsx
+// está apagada (`{false && (...)}`), así que pedir reviews en cada carga de
+// Home era una query desperdiciada (ver
+// docs/specs/optimizacion_carga_inicio.spec.md sección 3). `reviews` queda
+// fijo en `[]`; reactivar `fetchReviews()` aquí cuando se reactive esa
+// sección visual.
 export default function useHomeData(): HomeData {
   const [siteStats, setSiteStats] = useState<SiteStats>(STATS);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,12 +31,11 @@ export default function useHomeData(): HomeData {
 
     async function loadHomeData() {
       try {
-        const [statsData, reviewsData] = await Promise.all([fetchSiteStats(), fetchReviews()]);
+        const statsData = await fetchSiteStats();
 
         if (!isMounted) return;
 
         setSiteStats(statsData);
-        setReviews(reviewsData);
       } catch (err) {
         if (!isMounted) return;
         setError(err instanceof Error ? err.message : String(err));
