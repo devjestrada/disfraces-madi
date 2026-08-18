@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [0.11.2] - 2026-08-17
+
+### Fixed
+- Inicio ya no dispara dos peticiones idénticas a `costumes_full`: `App.tsx` solo llama a `useCostumes()` en `/catalogo` y en la ficha de disfraz (rutas que realmente consumen su resultado), no en todas las rutas.
+- `useHomeData` deja de traer `reviews` en cada carga de Inicio mientras la sección de testimonios permanece apagada (`{false && (...)}` en `Inicio.tsx`), evitando una consulta desperdiciada.
+
+### Changed
+- `carnival_main_banner.jpg` (452kB) y `sra_madi_nuestra_historia.jpg` (320kB), usadas en el hero y en "El Corazón de Madi" de Inicio, se reemplazan por WebP optimizado (185kB y 144kB) sin degradación visible.
+
 ## [0.11.1] - 2026-08-17
 
 ### Security
