@@ -40,7 +40,12 @@ export default function App() {
   const categoryParam = new URLSearchParams(location.search).get('categoria') as CatalogCategory | null;
   const activeCatalogCategory =
     isCatalogRoute && categoryParam && categoryParam !== 'Todos' ? categoryParam : undefined;
-  const { costumes, isLoading } = useCostumes(activeCatalogCategory);
+  // Solo /catalogo y /catalogo/:costumeSlug consumen `costumes` desde aquí;
+  // el resto de rutas (Inicio, Servicios, Nuestra Historia, Contacto) no lo
+  // necesitan, así que no debe dispararse la query ahí (ver
+  // docs/specs/optimizacion_carga_inicio.spec.md sección 2). Inicio.tsx trae
+  // su propio listado de disfraces destacados por separado.
+  const { costumes, isLoading } = useCostumes(activeCatalogCategory, isCatalogRoute);
 
   useEffect(() => {
     if (window.location.hash === '#admin') {

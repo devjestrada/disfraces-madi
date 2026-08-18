@@ -1,5 +1,5 @@
-import carnival_main_banner from './assets/init_page/images/carnival_main_banner.jpg';
-import sra_madi_nuestra_historia from './assets/init_page/images/sra_madi_nuestra_historia.jpg';
+import carnival_main_banner from './assets/init_page/images/carnival_main_banner.webp';
+import sra_madi_nuestra_historia from './assets/init_page/images/sra_madi_nuestra_historia.webp';
 
 import categoria_cumbia from './assets/init_page/images/categorias_destacadas/cumbia.jpg';
 import categoria_mapale from './assets/init_page/images/categorias_destacadas/mapale.jpg';
