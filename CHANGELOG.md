@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.11.1] - 2026-08-17
+
+### Security
+- Actualizadas dependencias transitivas para resolver 3 alertas de Dependabot: `nanoid` 3.3.16 → 3.3.18 (GHSA-2v37-7h3g-55p8, DoS por bucle infinito con `size: 0`), `postcss` 8.5.18 → 8.5.26 (GHSA-fxqj-rqcc-2cmp, lectura de archivos `.map` fuera del árbol esperado) y `react-router-dom`/`react-router` 7.18.1 → 7.18.2 (GHSA-qwww-vcr4-c8h2, bypass de CSRF en el modo experimental RSC, no usado en este proyecto). Cambio acotado a `package-lock.json`; ninguna de las tres tenía explotabilidad real confirmada en el código del sitio.
+
 ## [0.11.0] - 2026-08-17
 
 ### Added
