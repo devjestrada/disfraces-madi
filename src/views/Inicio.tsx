@@ -117,6 +117,7 @@ export default function Inicio() {
             src={ASSETS.carnival_main_banner}
             alt="Carnaval de Barranquilla"
             className="w-full h-full object-cover scale-105 filter brightness-45 contrast-105"
+            fetchPriority="high"
             referrerPolicy="no-referrer"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1e1b18] via-transparent to-[#1e1b18]/45"></div>
@@ -229,6 +230,7 @@ export default function Inicio() {
               <img
                 src={category.img}
                 alt={category.name}
+                loading="lazy"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-75 group-hover:brightness-60"
                 referrerPolicy="no-referrer"
               />
@@ -267,6 +269,7 @@ export default function Inicio() {
               <img
                 src={ASSETS.sra_madi_nuestra_historia}
                 alt="Atelier de Costura de Madi"
+                loading="lazy"
                 className="w-full rounded-2xl shadow-2xl relative z-10 border border-white/10"
                 referrerPolicy="no-referrer"
               />

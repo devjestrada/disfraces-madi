@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.11.3] - 2026-08-17
+
+### Changed
+- El hero de Inicio (`carnival_main_banner`) se sirve desde `public/hero-carnaval.webp` (ruta estática, sin hash) en vez de importarse como módulo JS, con `<link rel="preload" fetchpriority="high">` en `index.html` y `fetchPriority="high"` en el `<img>`, para que el navegador empiece a descargarlo en paralelo con el documento en vez de esperar a que se ejecute el bundle.
+- Las imágenes del Atelier Spotlight y de las tarjetas de Categorías Destacadas en Inicio usan `loading="lazy"` para no competir por ancho de banda con el hero durante la carga inicial.
+
 ## [0.11.2] - 2026-08-17
 
 ### Fixed
