@@ -11,8 +11,6 @@ import WhatsAppButton from './components/WhatsAppButton';
 import Inicio from './views/Inicio';
 import Catalogo from './views/Catalogo';
 import CatalogoDetail from './views/CatalogoDetail';
-import Servicios from './views/Servicios';
-import NuestraHistoria from './views/NuestraHistoria';
 import Contacto from './views/Contacto';
 import NotFound from './views/NotFound';
 
@@ -25,6 +23,12 @@ import type { CatalogCategory } from './types';
 // incluir su código (login, CRUD de disfraces, subida de imágenes) en
 // el bundle público inicial.
 const Admin = lazy(() => import('./views/Admin'));
+
+// Servicios y Nuestra Historia son rutas secundarias (no son la entrada
+// más común del sitio, a diferencia de Inicio/Catálogo): se cargan bajo
+// demanda para reducir el bundle inicial del sitio público.
+const Servicios = lazy(() => import('./views/Servicios'));
+const NuestraHistoria = lazy(() => import('./views/NuestraHistoria'));
 
 export default function App() {
   const location = useLocation();
@@ -90,13 +94,27 @@ export default function App() {
                 path="/catalogo/:costumeSlug"
                 element={<CatalogoDetail costumeProp={activeCostume} isLoading={isLoading} />}
               />
-              <Route path="/servicios" element={<Servicios />} />
-              <Route path="/nuestra-historia" element={<NuestraHistoria />} />
+              <Route
+                path="/servicios"
+                element={
+                  <Suspense fallback={<RouteLoadingFallback />}>
+                    <Servicios />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/nuestra-historia"
+                element={
+                  <Suspense fallback={<RouteLoadingFallback />}>
+                    <NuestraHistoria />
+                  </Suspense>
+                }
+              />
               <Route path="/contacto" element={<Contacto />} />
               <Route
                 path="/admin"
                 element={
-                  <Suspense fallback={<AdminLoadingFallback />}>
+                  <Suspense fallback={<RouteLoadingFallback />}>
                     <Admin />
                   </Suspense>
                 }
@@ -115,9 +133,9 @@ export default function App() {
   );
 }
 
-function AdminLoadingFallback() {
+function RouteLoadingFallback() {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center bg-[#fff8f5]" id="admin-loading-fallback">
+    <div className="flex min-h-[60vh] items-center justify-center bg-[#fff8f5]" id="route-loading-fallback">
       <div className="h-14 w-14 rounded-full border-4 border-[#a8001a]/20 border-t-[#a8001a] animate-spin" />
     </div>
   );

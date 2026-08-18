@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
+/* Las fuentes de Google se cargan vía <link> en index.html (preconnect +
+   stylesheet) para que el navegador las descubra en paralelo al bundle,
+   en vez de esperar a que se resuelva este CSS. Ver
+   docs/specs/specs_backlog/optimizacion_rendimiento.spec.md sección 2. */
 @import "tailwindcss";
 
 @theme {

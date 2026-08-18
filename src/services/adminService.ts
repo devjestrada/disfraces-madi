@@ -1,4 +1,5 @@
 import { getPublicImageUrl, supabaseAdmin } from '../lib/supabase';
+import { compressImageFile } from '../utils/imageOptimization';
 import type {
   AdminCategory,
   AdminCostume,
@@ -261,12 +262,14 @@ export async function uploadCostumeImage(
     throw new Error('Archivo supera 5MB. Reduce el tamano antes de subir.');
   }
 
-  const ext = getFileExtension(file);
+  const compressedFile = await compressImageFile(file);
+
+  const ext = getFileExtension(compressedFile);
   const storagePath = `costumes/${costumeId}/${crypto.randomUUID()}.${ext}`;
   const { error: uploadError } = await supabaseAdmin.storage
     .from('costume-images')
-    .upload(storagePath, file, {
-      contentType: file.type,
+    .upload(storagePath, compressedFile, {
+      contentType: compressedFile.type,
       upsert: false,
     });
 
@@ -739,12 +742,14 @@ export async function uploadSiteAsset(key: string, file: File) {
     throw new Error('El asset supera 5MB.');
   }
 
-  const ext = getFileExtension(file);
+  const compressedFile = await compressImageFile(file);
+
+  const ext = getFileExtension(compressedFile);
   const storagePath = `site-assets/${key}/${crypto.randomUUID()}.${ext}`;
   const { error: uploadError } = await supabaseAdmin.storage
     .from('site-assets')
-    .upload(storagePath, file, {
-      contentType: file.type,
+    .upload(storagePath, compressedFile, {
+      contentType: compressedFile.type,
       upsert: false,
     });
 

@@ -7,6 +7,7 @@ import { usePublicData } from '../context/PublicDataContext';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import type { Costume, CostumeCategory } from '../types';
 import useCostumes from '../hooks/useCostumes';
+import useHomeData from '../hooks/useHomeData';
 import { useDocumentMeta, useStructuredData } from '../hooks/useSeo';
 import { buildLocalBusinessLd } from '../utils/structuredData';
 
@@ -95,7 +96,8 @@ export default function Inicio() {
     });
   }, [costumes]);
 
-  const { contactInfo, siteStats, reviews } = usePublicData();
+  const { contactInfo } = usePublicData();
+  const { siteStats, reviews } = useHomeData();
 
   useDocumentMeta({
     title: 'Disfraces Madi | Alquiler y Venta de Disfraces del Carnaval de Barranquilla',
