@@ -1,5 +1,10 @@
-import carnival_main_banner from './assets/init_page/images/carnival_main_banner.webp';
 import sra_madi_nuestra_historia from './assets/init_page/images/sra_madi_nuestra_historia.webp';
+
+// Servido desde public/ (ruta estática, sin hash) en vez de importado como
+// módulo JS: así el preload scanner del navegador puede descubrirlo desde el
+// <link rel="preload"> de index.html sin esperar a que se ejecute el bundle.
+// Ver docs/specs/specs_backlog/optimizacion_hero_imagen_inicio.spec.md sección 1.
+const carnival_main_banner = '/hero-carnaval.webp';
 
 import categoria_cumbia from './assets/init_page/images/categorias_destacadas/cumbia.jpg';
 import categoria_mapale from './assets/init_page/images/categorias_destacadas/mapale.jpg';
