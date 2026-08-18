@@ -349,7 +349,11 @@ export default function Catalogo({ costumes }: CatalogoProps) {
             ) : (
               /* Costume Grid */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="costumes-card-grid">
-                {filteredCostumes.map((costume) => {
+                {filteredCostumes.map((costume, index) => {
+                  // Las tarjetas de la primera fila están siempre por encima
+                  // del pliegue: cargarlas de forma perezosa solo retrasa su
+                  // aparición. El resto de la grilla sí se beneficia de lazy.
+                  const isAboveTheFold = index < 3;
                   return (
                     <div
                       key={costume.id}
@@ -361,7 +365,8 @@ export default function Catalogo({ costumes }: CatalogoProps) {
                         <img
                           src={costume.primaryImage}
                           alt={costume.name}
-                          loading="lazy"
+                          loading={isAboveTheFold ? 'eager' : 'lazy'}
+                          fetchPriority={index === 0 ? 'high' : undefined}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           referrerPolicy="no-referrer"
                         />
