@@ -205,7 +205,7 @@ export default function InsightsSection({ onNavigateToCostume }: InsightsSection
       />
 
       {isLoading ? (
-        <p className="text-sm text-[#6E4B4B]">Cargando Insights...</p>
+        <p className="text-sm text-[#5C5257]">Cargando Insights...</p>
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

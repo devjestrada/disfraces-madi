@@ -43,18 +43,18 @@ export default function RankingDetailDrawer({
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-serif text-xl text-[#4A1F1F]">{title}</h3>
+              <h3 className="font-serif text-xl text-[#1A1418]">{title}</h3>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg border border-[#D6B8AE] px-3 py-1.5 text-xs font-semibold text-[#4A1F1F]"
+                className="rounded-lg border border-[#1A1418]/20 px-3 py-1.5 text-xs font-semibold text-[#1A1418]"
               >
                 Cerrar
               </button>
             </div>
 
             {rows.length === 0 ? (
-              <p className="text-sm text-[#6E4B4B]">Sin datos para este periodo.</p>
+              <p className="text-sm text-[#5C5257]">Sin datos para este periodo.</p>
             ) : (
               <ol className="space-y-2">
                 {rows.map((row, index) => {
@@ -62,17 +62,17 @@ export default function RankingDetailDrawer({
                   return (
                     <li
                       key={row.costumeId ?? `unlinked-${index}`}
-                      className="flex items-center justify-between gap-2 rounded-xl border border-[#EFE1DB] p-3 text-sm"
+                      className="flex items-center justify-between gap-2 rounded-xl border border-[#1A1418]/10 p-3 text-sm"
                     >
                       <span className="flex min-w-0 items-center gap-2">
-                        <span className="shrink-0 font-mono text-xs text-[#6E4B4B]">#{index + 1}</span>
-                        <span className="truncate text-[#4A1F1F]">{row.label}</span>
+                        <span className="shrink-0 font-mono text-xs text-[#5C5257]">#{index + 1}</span>
+                        <span className="truncate text-[#1A1418]">{row.label}</span>
                       </span>
                       <span className="flex shrink-0 items-center gap-3">
                         {variation !== null ? (
                           <span
                             className={`text-[10px] font-semibold ${
-                              variation >= 0 ? 'text-[#1B6F3A]' : 'text-[#9E2D2D]'
+                              variation >= 0 ? 'text-[#1B6F3A]' : 'text-[#B3261E]'
                             }`}
                           >
                             {variation >= 0 ? '▲' : '▼'} {Math.abs(variation).toFixed(0)}%

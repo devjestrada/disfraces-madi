@@ -34,10 +34,10 @@ export default function CsvImportPanel({ onImport, isImporting }: CsvImportPanel
   };
 
   return (
-    <div className="space-y-3 rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
+    <div className="space-y-3 rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <h3 className="font-serif text-lg text-[#4A1F1F]">Importar/anexar histórico (CSV)</h3>
-        <label className="cursor-pointer rounded-lg bg-[#4A1F1F] px-3 py-2 text-xs font-semibold text-white">
+        <h3 className="font-serif text-lg text-[#1A1418]">Importar/anexar histórico (CSV)</h3>
+        <label className="cursor-pointer rounded-lg bg-[#1A1418] px-3 py-2 text-xs font-semibold text-white">
           Elegir archivo
           <input
             type="file"
@@ -48,16 +48,16 @@ export default function CsvImportPanel({ onImport, isImporting }: CsvImportPanel
         </label>
       </div>
 
-      <p className="text-xs text-[#6E4B4B]">
+      <p className="text-xs text-[#5C5257]">
         Columnas esperadas: archivo, numero_factura, cliente, direccion, telefono_nit, fecha, Disfraz, categoria,
         Accesorios, valor_total, deposito, notas. Puedes usar este mismo panel para anexar nuevas filas más adelante.
       </p>
 
-      {fileName ? <p className="text-xs text-[#6E4B4B]">Archivo: {fileName}</p> : null}
-      {parseError ? <p className="text-xs font-semibold text-[#9E2D2D]">{parseError}</p> : null}
+      {fileName ? <p className="text-xs text-[#5C5257]">Archivo: {fileName}</p> : null}
+      {parseError ? <p className="text-xs font-semibold text-[#B3261E]">{parseError}</p> : null}
 
       {parsedRows.length > 0 ? (
-        <div className="flex items-center justify-between rounded-lg bg-[#FFF8F5] p-3 text-xs text-[#4A1F1F]">
+        <div className="flex items-center justify-between rounded-lg bg-[#FFF8F5] p-3 text-xs text-[#1A1418]">
           <span>{parsedRows.length} filas listas para importar.</span>
           <button
             type="button"

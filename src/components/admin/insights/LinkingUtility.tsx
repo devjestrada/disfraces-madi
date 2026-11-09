@@ -13,16 +13,16 @@ export default function LinkingUtility({ unmatchedLabels, costumes, onConfirm }:
 
   if (unmatchedLabels.length === 0) {
     return (
-      <div className="rounded-2xl border border-[#E6D0C9] bg-white p-5 text-sm text-[#6E4B4B] shadow-sm">
+      <div className="rounded-2xl border border-[#1A1418]/10 bg-white p-5 text-sm text-[#5C5257] shadow-sm">
         Todas las etiquetas del histórico están vinculadas a un disfraz del catálogo.
       </div>
     );
   }
 
   return (
-    <div className="space-y-3 rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
-      <h3 className="font-serif text-lg text-[#4A1F1F]">Vincular etiquetas del histórico</h3>
-      <p className="text-xs text-[#6E4B4B]">
+    <div className="space-y-3 rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm">
+      <h3 className="font-serif text-lg text-[#1A1418]">Vincular etiquetas del histórico</h3>
+      <p className="text-xs text-[#5C5257]">
         Estas etiquetas de "Disfraz" del CSV no coinciden con ningún disfraz del catálogo actual. Vincúlalas una
         vez y quedarán asociadas automáticamente en futuras importaciones.
       </p>
@@ -36,13 +36,13 @@ export default function LinkingUtility({ unmatchedLabels, costumes, onConfirm }:
           return (
             <li
               key={label}
-              className="flex flex-wrap items-center gap-2 rounded-xl border border-[#EFE1DB] p-3 text-sm"
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-[#1A1418]/10 p-3 text-sm"
             >
-              <span className="min-w-[140px] font-semibold text-[#4A1F1F]">{label}</span>
+              <span className="min-w-[140px] font-semibold text-[#1A1418]">{label}</span>
               <select
                 value={selected}
                 onChange={(event) => setSelections((prev) => ({ ...prev, [label]: event.target.value }))}
-                className="rounded-lg border border-[#D6B8AE] px-2 py-1 text-xs"
+                className="rounded-lg border border-[#1A1418]/20 px-2 py-1 text-xs"
               >
                 <option value="">Selecciona un disfraz</option>
                 {suggestions.map((suggestion) => (

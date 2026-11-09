@@ -27,7 +27,7 @@ export default function PeriodSelector({
   onCustomRangeChange,
 }: PeriodSelectorProps) {
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 rounded-2xl border border-[#E6D0C9] bg-white p-3 shadow-sm">
+    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 rounded-2xl border border-[#1A1418]/10 bg-white p-3 shadow-sm">
       <div className="flex flex-wrap gap-2">
         {PRESET_OPTIONS.map((option) => (
           <button
@@ -37,7 +37,7 @@ export default function PeriodSelector({
             className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
               value === option.id
                 ? 'bg-[#A8001A] text-white'
-                : 'border border-[#D6B8AE] text-[#4A1F1F] hover:bg-[#FFF4F6]'
+                : 'border border-[#1A1418]/20 text-[#1A1418] hover:bg-[#A8001A]/5'
             }`}
           >
             {option.label}
@@ -46,7 +46,7 @@ export default function PeriodSelector({
       </div>
 
       {value === 'personalizado' ? (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-[#4A1F1F]">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[#1A1418]">
           <label className="flex items-center gap-1.5">
             Desde
             <input
@@ -58,7 +58,7 @@ export default function PeriodSelector({
                   from: event.target.value ? new Date(event.target.value) : null,
                 })
               }
-              className="rounded-lg border border-[#D6B8AE] px-2 py-1"
+              className="rounded-lg border border-[#1A1418]/20 px-2 py-1"
             />
           </label>
           <label className="flex items-center gap-1.5">
@@ -72,7 +72,7 @@ export default function PeriodSelector({
                   to: event.target.value ? new Date(event.target.value) : null,
                 })
               }
-              className="rounded-lg border border-[#D6B8AE] px-2 py-1"
+              className="rounded-lg border border-[#1A1418]/20 px-2 py-1"
             />
           </label>
         </div>

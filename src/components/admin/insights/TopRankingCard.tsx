@@ -16,14 +16,14 @@ export default function TopRankingCard({ title, source, rows, onViewAll }: TopRa
   const maxCount = top[0]?.count ?? 0;
 
   return (
-    <div className="space-y-3 rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
+    <div className="space-y-3 rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <h3 className="font-serif text-lg text-[#4A1F1F]">{title}</h3>
-        <span className="text-[10px] uppercase tracking-wide text-[#6E4B4B]/70">Fuente: {source}</span>
+        <h3 className="font-serif text-lg text-[#1A1418]">{title}</h3>
+        <span className="text-[10px] uppercase tracking-wide text-[#5C5257]/70">Fuente: {source}</span>
       </div>
 
       {top.length === 0 ? (
-        <p className="text-sm text-[#6E4B4B]">
+        <p className="text-sm text-[#5C5257]">
           Aún no hay movimiento registrado en este periodo. Prueba con otro rango de fechas.
         </p>
       ) : (
@@ -31,12 +31,12 @@ export default function TopRankingCard({ title, source, rows, onViewAll }: TopRa
           {top.map((row, index) => (
             <li key={row.costumeId ?? `unlinked-${index}`} className="space-y-1">
               <div className="flex items-center justify-between text-sm">
-                <span className="truncate text-[#4A1F1F]">
+                <span className="truncate text-[#1A1418]">
                   {index + 1}. {row.label}
                 </span>
                 <span className="font-mono font-semibold text-[#A8001A]">{row.count}</span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#F3F0EF]">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#1A1418]/5">
                 <div
                   className="h-full rounded-full bg-[#A8001A]"
                   style={{ width: `${maxCount > 0 ? (row.count / maxCount) * 100 : 0}%` }}

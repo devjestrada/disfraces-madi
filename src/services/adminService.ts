@@ -780,3 +780,37 @@ export async function uploadSiteAsset(key: string, file: File) {
 export function getSiteAssetUrl(storagePath: string) {
   return getPublicImageUrl(storagePath, 'site-assets');
 }
+
+/** Solo lectura: cuántos registros del histórico de alquileres están vinculados a un disfraz. */
+export async function countRentalHistoryForCostume(costumeId: string) {
+  const { count, error } = await supabaseAdmin
+    .from('costume_rental_history')
+    .select('id', { count: 'exact', head: true })
+    .eq('matched_costume_id', costumeId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return count ?? 0;
+}
+
+export interface CatalogImageHealth {
+  costumeIdsWithImages: Set<string>;
+  imagesWithoutAlt: number;
+}
+
+/** Solo lectura: estado de las fotos del catálogo para la sección Resumen. */
+export async function fetchCatalogImageHealth(): Promise<CatalogImageHealth> {
+  const { data, error } = await supabaseAdmin.from('costume_images').select('costume_id, alt_text');
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const rows = (data ?? []) as Array<{ costume_id: string; alt_text: string | null }>;
+  return {
+    costumeIdsWithImages: new Set(rows.map((row) => row.costume_id)),
+    imagesWithoutAlt: rows.filter((row) => !row.alt_text || !row.alt_text.trim()).length,
+  };
+}
