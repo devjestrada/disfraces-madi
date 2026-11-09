@@ -50,8 +50,10 @@ import {
   uploadCostumeImage,
 } from '../services/adminService';
 import { formatCOP, formatCOPInput, parseCOPInput } from '../utils/format';
+import type { AiCostumeDraft } from '../services/aiCostumeService';
 import {
   BarChart3,
+  Camera,
   LayoutDashboard,
   LogOut,
   Palette,
@@ -63,6 +65,7 @@ import {
 
 const InsightsSection = lazy(() => import('./admin/InsightsSection'));
 const ResumenSection = lazy(() => import('./admin/ResumenSection'));
+const CrearDesdeFoto = lazy(() => import('./admin/CrearDesdeFoto'));
 
 type AdminSection = 'resumen' | 'disfraces' | 'insights' | 'telas-accesorios' | 'configuracion';
 
@@ -73,6 +76,26 @@ const ADMIN_SECTIONS: Array<{ id: AdminSection; label: string; icon: typeof Shir
   { id: 'telas-accesorios', label: 'Telas y accesorios', icon: Palette },
   { id: 'configuracion', label: 'Configuración del sitio', icon: Settings },
 ];
+
+/** Borrador que deja el flujo "Nuevo disfraz desde foto" mientras se revisa el formulario. */
+type AiDraftState = {
+  photo: File;
+  altText: string;
+  newFabrics: string[];
+  newAccessories: string[];
+  notes: string;
+  /** Campos que llenó la IA, para resaltarlos. */
+  aiFields: string[];
+  /** Si el disfraz ya se creó pero faltó guardar la ficha técnica o la foto. */
+  pendingForCostumeId: string | null;
+};
+
+const normalizeName = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
 
 type ConfirmState = {
   message: string;
@@ -168,6 +191,12 @@ export default function Admin() {
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [activeSection, setActiveSection] = useState<AdminSection>('resumen');
+  const [showPhotoWizard, setShowPhotoWizard] = useState(false);
+  const validatedAdminIdRef = useRef<string | null>(null);
+  const [pendingPrefill, setPendingPrefill] = useState<AiCostumeDraft | null>(null);
+  const [aiDraft, setAiDraft] = useState<AiDraftState | null>(null);
+  const [isRetryingAiExtras, setIsRetryingAiExtras] = useState(false);
+  const aiPhotoUrl = useMemo(() => (aiDraft ? URL.createObjectURL(aiDraft.photo) : ''), [aiDraft?.photo]);
   const [viewMode, setViewMode] = useState<'tabla' | 'lista' | 'galeria'>('lista');
   const disfracesRightColumnRef = useRef<HTMLDivElement | null>(null);
   const [disfracesLeftColumnHeight, setDisfracesLeftColumnHeight] = useState<number | undefined>(undefined);
@@ -276,6 +305,7 @@ export default function Admin() {
       if (newSession?.user?.id) {
         await validateAdmin(newSession.user.id);
       } else {
+        validatedAdminIdRef.current = null;
         setAdminState('denied');
       }
     });
@@ -287,6 +317,12 @@ export default function Admin() {
   }, []);
 
   const validateAdmin = async (userId: string) => {
+    // Supabase emite eventos de sesión al refrescar el token o al volver a la pestaña (p. ej. al
+    // regresar de la cámara del celular). Si este usuario ya se validó, no se vuelve a pasar por
+    // 'checking': eso desmontaba el panel y perdía lo que se estaba haciendo.
+    if (validatedAdminIdRef.current === userId) {
+      return;
+    }
     setAdminState('checking');
     setErrorMessage('');
 
@@ -305,6 +341,7 @@ export default function Admin() {
     }
 
     if (data?.user_id) {
+      validatedAdminIdRef.current = userId;
       setAdminState('granted');
     } else {
       setAdminState('denied');
@@ -365,6 +402,8 @@ export default function Admin() {
   };
 
   const hydrateFormFromCostume = (costume: AdminCostume) => {
+    // Un borrador de "Desde foto" solo sobrevive si es el del disfraz que quedó pendiente de completar.
+    setAiDraft((prev) => (prev && prev.pendingForCostumeId === costume.id ? prev : null));
     setSelectedCostumeId(costume.id);
     setForm({
       name: costume.name,
@@ -447,6 +486,94 @@ export default function Admin() {
     }
   }, [selectedCostumeId]);
 
+  useEffect(() => () => {
+    if (aiPhotoUrl) URL.revokeObjectURL(aiPhotoUrl);
+  }, [aiPhotoUrl]);
+
+  // Aplica el borrador de "Desde foto" al formulario. Va después del efecto anterior para que
+  // la limpieza de relaciones al pasar a "nuevo disfraz" no borre lo que sugirió la IA.
+  useEffect(() => {
+    if (!pendingPrefill || selectedCostumeId) {
+      return;
+    }
+    const draft = pendingPrefill;
+    const extracted = draft.extracted;
+    const aiFields: string[] = [];
+    const findId = <T extends { id: string; name: string }>(items: T[], name: string) =>
+      name ? items.find((item) => normalizeName(item.name) === normalizeName(name))?.id ?? '' : '';
+    const digits = (value: number | null) => (value !== null && value > 0 ? String(Math.round(value)) : '');
+
+    const categoryId = extracted ? findId(categories, extracted.categoria) : '';
+    const designerId = extracted ? findId(designers, extracted.disenadora) : '';
+    const nextForm: CostumeFormState = {
+      ...EMPTY_FORM,
+      category_id: categoryId || (categories[0]?.id ?? ''),
+    };
+    if (extracted) {
+      if (extracted.nombre) {
+        nextForm.name = extracted.nombre;
+        nextForm.slug = slugify(extracted.nombre);
+        aiFields.push('name');
+      }
+      if (categoryId) aiFields.push('category_id');
+      if (designerId) {
+        nextForm.designer_id = designerId;
+        aiFields.push('designer_id');
+      }
+      if (extracted.descripcion) {
+        nextForm.description = extracted.descripcion;
+        aiFields.push('description');
+      }
+      nextForm.rental_price = digits(extracted.precio_alquiler);
+      nextForm.sale_price = digits(extracted.precio_venta);
+      nextForm.deposit_price = digits(extracted.precio_deposito);
+      if (nextForm.rental_price) aiFields.push('rental_price');
+      if (nextForm.sale_price) aiFields.push('sale_price');
+      if (nextForm.deposit_price) aiFields.push('deposit_price');
+    }
+    setForm(nextForm);
+
+    const fabricIds = extracted
+      ? extracted.telas_existentes.map((name) => findId(fabrics, name)).filter(Boolean)
+      : [];
+    const accessoryIds = extracted
+      ? extracted.accesorios_existentes.map((name) => findId(accessories, name)).filter(Boolean)
+      : [];
+    const sizes = extracted
+      ? (extracted.tallas.filter((size) => SIZE_OPTIONS.includes(size as CostumeSize)) as CostumeSize[])
+      : [];
+    setDetailsText(extracted ? extracted.detalles_visibles.join('\n') : '');
+    setSelectedFabricIds(fabricIds);
+    setSelectedAccessoryIds(accessoryIds);
+    setSelectedSizes(sizes);
+    if (extracted?.detalles_visibles.length) aiFields.push('details');
+    if (fabricIds.length) aiFields.push('fabrics');
+    if (accessoryIds.length) aiFields.push('accessories');
+    if (sizes.length) aiFields.push('sizes');
+
+    setAiDraft({
+      photo: draft.photo,
+      altText: draft.altText,
+      newFabrics: extracted?.telas_nuevas ?? [],
+      newAccessories: extracted?.accesorios_nuevos ?? [],
+      notes: extracted?.notas_adicionales ?? '',
+      aiFields,
+      pendingForCostumeId: null,
+    });
+    setPendingPrefill(null);
+    // En el celular el formulario queda debajo de la lista: llevar la vista al borrador.
+    setTimeout(() => {
+      document.getElementById('borrador-ia')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+    notify(
+      extracted
+        ? 'Revisa los datos que sugirió la IA (resaltados) y guarda el disfraz.'
+        : 'Foto lista. Completa el formulario y guarda el disfraz.',
+      'info'
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingPrefill, selectedCostumeId]);
+
   useLayoutEffect(() => {
     if (activeSection !== 'disfraces') {
       return;
@@ -510,12 +637,14 @@ export default function Admin() {
   };
 
   const handleSignOut = async () => {
+    validatedAdminIdRef.current = null;
     await supabaseAdmin.auth.signOut();
     setSession(null);
     setAdminState('denied');
   };
 
   const handleCreateNew = () => {
+    setAiDraft(null);
     setSelectedCostumeId('');
     setImages([]);
     setAltDrafts({});
@@ -542,6 +671,119 @@ export default function Admin() {
     setSelectedSizes((prev) =>
       prev.includes(size) ? prev.filter((item) => item !== size) : [...prev, size]
     );
+  };
+
+  const aiRing = (field: string) =>
+    aiDraft && !aiDraft.pendingForCostumeId && aiDraft.aiFields.includes(field) ? ' ring-2 ring-[#FDC003]' : '';
+
+  const handleOpenPhotoWizard = () => {
+    setShowPhotoWizard(true);
+  };
+
+  const handleAiDraftComplete = (draft: AiCostumeDraft) => {
+    setShowPhotoWizard(false);
+    setActiveSection('disfraces');
+    setSelectedCostumeId('');
+    setImages([]);
+    setAltDrafts({});
+    setUploadQueue([]);
+    setPendingPrefill(draft);
+  };
+
+  const handleDiscardAiDraft = () => {
+    setAiDraft(null);
+  };
+
+  const handleCreateSuggested = async (kind: 'fabric' | 'accessory', name: string) => {
+    setToast(null);
+    try {
+      if (kind === 'fabric') {
+        const created = await createFabric(name);
+        setFabrics((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+        setSelectedFabricIds((prev) => [...prev, created.id]);
+      } else {
+        const created = await createAccessory(name);
+        setAccessories((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+        setSelectedAccessoryIds((prev) => [...prev, created.id]);
+      }
+      setAiDraft((prev) =>
+        prev
+          ? {
+              ...prev,
+              newFabrics: kind === 'fabric' ? prev.newFabrics.filter((item) => item !== name) : prev.newFabrics,
+              newAccessories:
+                kind === 'accessory' ? prev.newAccessories.filter((item) => item !== name) : prev.newAccessories,
+            }
+          : prev
+      );
+      notify(`“${name}” creado y marcado en la ficha técnica.`);
+    } catch (error) {
+      notifyError(error);
+    }
+  };
+
+  const handleDismissSuggested = (kind: 'fabric' | 'accessory', name: string) => {
+    setAiDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            newFabrics: kind === 'fabric' ? prev.newFabrics.filter((item) => item !== name) : prev.newFabrics,
+            newAccessories:
+              kind === 'accessory' ? prev.newAccessories.filter((item) => item !== name) : prev.newAccessories,
+          }
+        : prev
+    );
+  };
+
+  /**
+   * Guarda lo que el flujo "Desde foto" agrega a un disfraz recién creado: ficha técnica y foto principal.
+   * Devuelve la lista de lo que no se pudo guardar.
+   */
+  const persistAiExtras = async (
+    costumeId: string,
+    draft: AiDraftState,
+    relations: { details: string[]; fabricIds: string[]; accessoryIds: string[]; sizes: CostumeSize[] }
+  ) => {
+    const failed: string[] = [];
+    try {
+      await saveCostumeRelations(costumeId, relations);
+    } catch (error) {
+      console.error('[desde foto] no se pudo guardar la ficha técnica', error);
+      failed.push('la ficha técnica');
+    }
+    try {
+      await uploadCostumeImage(costumeId, draft.photo, { makePrimary: true, altText: draft.altText });
+    } catch (error) {
+      console.error('[desde foto] no se pudo subir la foto', error);
+      failed.push('la foto principal');
+    }
+    return failed;
+  };
+
+  const currentRelations = () => ({
+    details: detailsText
+      .split('\n')
+      .map((item) => item.trim())
+      .filter(Boolean),
+    fabricIds: selectedFabricIds,
+    accessoryIds: selectedAccessoryIds,
+    sizes: selectedSizes,
+  });
+
+  const handleRetryAiExtras = async () => {
+    if (!aiDraft?.pendingForCostumeId) return;
+    const costumeId = aiDraft.pendingForCostumeId;
+    setIsRetryingAiExtras(true);
+    setToast(null);
+    const failed = await persistAiExtras(costumeId, aiDraft, currentRelations());
+    await Promise.all([loadRelations(costumeId), loadImages(costumeId)]);
+    setIsRetryingAiExtras(false);
+    if (failed.length) {
+      notify(`Todavía no se pudo guardar ${failed.join(' ni ')}. Intenta de nuevo en un momento.`, 'error');
+    } else {
+      setAiDraft(null);
+      notify('Listo, el disfraz quedó completo con su foto principal.');
+    }
   };
 
   const handleCreateFabric = async () => {
@@ -786,9 +1028,26 @@ export default function Admin() {
         await updateCostume(selectedCostumeId, payload);
         notify('Disfraz actualizado correctamente.');
       } else {
+        const draft = aiDraft;
+        const relations = currentRelations();
         const created = await createCostume(payload);
         setSelectedCostumeId(created.id);
-        notify('Disfraz creado. Ya puedes gestionar su galeria.');
+        if (draft) {
+          const failed = await persistAiExtras(created.id, draft, relations);
+          await Promise.all([loadRelations(created.id), loadImages(created.id)]);
+          if (failed.length) {
+            setAiDraft({ ...draft, pendingForCostumeId: created.id });
+            notify(
+              `El disfraz se creó, pero no se pudo guardar ${failed.join(' ni ')}. Usa “Reintentar” en el aviso de arriba.`,
+              'error'
+            );
+          } else {
+            setAiDraft(null);
+            notify(`Listo, “${payload.name}” quedó creado con su foto principal.`);
+          }
+        } else {
+          notify('Disfraz creado. Ya puedes gestionar su galeria.');
+        }
       }
 
       const refreshed = await fetchAdminCostumes();
@@ -1186,6 +1445,12 @@ export default function Admin() {
         <div className="space-y-6">
           <Toast toast={toast} onDismiss={() => setToast(null)} />
 
+          {showPhotoWizard ? (
+            <Suspense fallback={null}>
+              <CrearDesdeFoto onCancel={() => setShowPhotoWizard(false)} onComplete={handleAiDraftComplete} />
+            </Suspense>
+          ) : null}
+
           {activeSection === 'resumen' ? (
             <Suspense fallback={<p className="text-sm text-[#5C5257]">Cargando resumen...</p>}>
               <ResumenSection
@@ -1194,6 +1459,7 @@ export default function Admin() {
                   handleCreateNew();
                   setActiveSection('disfraces');
                 }}
+                onCreateFromPhoto={handleOpenPhotoWizard}
                 onOpenCostume={handleNavigateToCostumeFromInsights}
                 onGoToInsights={() => setActiveSection('insights')}
                 onGoToCostumes={() => setActiveSection('disfraces')}
@@ -1240,6 +1506,14 @@ export default function Admin() {
                       className="rounded-lg bg-[#A8001A] px-3 py-1.5 text-xs font-semibold text-white"
                     >
                       Nuevo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleOpenPhotoWizard}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#A8001A] px-3 py-1.5 text-xs font-semibold text-[#A8001A]"
+                    >
+                      <Camera size={14} strokeWidth={1.75} aria-hidden="true" />
+                      Desde foto
                     </button>
                   </div>
                 </div>
@@ -1453,6 +1727,96 @@ export default function Admin() {
               </div>
 
               <div className="space-y-6" ref={disfracesRightColumnRef}>
+              {aiDraft ? (
+                <section
+                  aria-labelledby="borrador-ia"
+                  className="rounded-2xl border-2 border-[#FDC003] bg-white p-5 shadow-sm sm:p-6"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row">
+                    {aiPhotoUrl ? (
+                      <img
+                        src={aiPhotoUrl}
+                        alt={aiDraft.altText || 'Foto del disfraz editada con IA'}
+                        className="h-48 w-36 shrink-0 self-center rounded-lg border border-[#1A1418]/10 object-cover sm:self-start"
+                      />
+                    ) : null}
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h2 id="borrador-ia" className="font-serif text-[22px] font-semibold leading-[1.3] text-[#1A1418]">
+                            {aiDraft.pendingForCostumeId ? 'Falta completar el disfraz' : 'Borrador desde foto'}
+                          </h2>
+                          <p className="mt-1 text-sm leading-[1.6] text-[#5C5257]">
+                            {aiDraft.pendingForCostumeId
+                              ? 'El disfraz ya existe. Reintenta para guardar lo que faltó.'
+                              : aiDraft.aiFields.length
+                                ? 'Los campos resaltados los sugirió la IA. Revísalos antes de guardar: al guardar se crean también la ficha técnica y la foto principal.'
+                                : 'Completa el formulario y guarda: la foto quedará como principal del disfraz.'}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleDiscardAiDraft}
+                          className="shrink-0 text-sm font-medium text-[#5C5257] hover:text-[#A8001A]"
+                        >
+                          Descartar
+                        </button>
+                      </div>
+
+                      <label className="block text-sm font-medium text-[#1A1418]">
+                        Texto alternativo de la foto
+                        <input
+                          value={aiDraft.altText}
+                          onChange={(event) =>
+                            setAiDraft((prev) => (prev ? { ...prev, altText: event.target.value } : prev))
+                          }
+                          placeholder="Ej.: Disfraz de Marimonda con sombrilla, vista de frente"
+                          className={`mt-1.5 min-h-11 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 text-base text-[#1A1418] outline-none focus:border-[#A8001A]${aiDraft.altText && !aiDraft.pendingForCostumeId ? ' ring-2 ring-[#FDC003]' : ''}`}
+                        />
+                      </label>
+
+                      {aiDraft.newFabrics.length || aiDraft.newAccessories.length ? (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-[#1A1418]">Nuevos en la descripción — ¿crearlos?</p>
+                          <div className="flex flex-wrap gap-2">
+                            {aiDraft.newFabrics.map((name) => (
+                              <span key={`fabric-${name}`} className="inline-flex items-center gap-1 rounded-full border border-[#1A1418]/20 bg-white py-1 pl-3 pr-1 text-xs font-medium text-[#1A1418]">
+                                Tela: {name}
+                                <button type="button" onClick={() => handleCreateSuggested('fabric', name)} className="min-h-8 rounded-full bg-[#A8001A] px-2.5 text-[#FFF8F5]">Crear</button>
+                                <button type="button" aria-label={`Ignorar tela ${name}`} onClick={() => handleDismissSuggested('fabric', name)} className="min-h-8 px-2 text-[#5C5257]">✕</button>
+                              </span>
+                            ))}
+                            {aiDraft.newAccessories.map((name) => (
+                              <span key={`accessory-${name}`} className="inline-flex items-center gap-1 rounded-full border border-[#1A1418]/20 bg-white py-1 pl-3 pr-1 text-xs font-medium text-[#1A1418]">
+                                Accesorio: {name}
+                                <button type="button" onClick={() => handleCreateSuggested('accessory', name)} className="min-h-8 rounded-full bg-[#A8001A] px-2.5 text-[#FFF8F5]">Crear</button>
+                                <button type="button" aria-label={`Ignorar accesorio ${name}`} onClick={() => handleDismissSuggested('accessory', name)} className="min-h-8 px-2 text-[#5C5257]">✕</button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {aiDraft.notes ? (
+                        <p className="rounded-lg bg-[#FFF8F5] p-3 text-sm leading-[1.6] text-[#1A1418]">
+                          <span className="font-medium">Notas de la descripción:</span> {aiDraft.notes}
+                        </p>
+                      ) : null}
+
+                      {aiDraft.pendingForCostumeId ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleRetryAiExtras()}
+                          disabled={isRetryingAiExtras}
+                          className="min-h-11 rounded-lg bg-[#A8001A] px-5 text-sm font-medium text-[#FFF8F5] disabled:opacity-60"
+                        >
+                          {isRetryingAiExtras ? 'Guardando...' : 'Reintentar'}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </section>
+              ) : null}
               <form
               onSubmit={handleSaveCostume}
               className="rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm sm:p-6"
@@ -1482,7 +1846,7 @@ export default function Admin() {
                       value={form.name}
                       onChange={(event) => handleFormField('name', event.target.value)}
                       placeholder="Ej.: Marimonda de Barrio Abajo"
-                      className="mt-1.5 min-h-11 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 text-base text-[#1A1418] outline-none focus:border-[#A8001A]"
+                      className={`mt-1.5 min-h-11 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 text-base text-[#1A1418] outline-none focus:border-[#A8001A]${aiRing('name')}`}
                       required
                     />
                   </label>
@@ -1508,7 +1872,7 @@ export default function Admin() {
                     <select
                       value={form.category_id}
                       onChange={(event) => handleFormField('category_id', event.target.value)}
-                      className="mt-1.5 min-h-11 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 text-base text-[#1A1418] outline-none focus:border-[#A8001A]"
+                      className={`mt-1.5 min-h-11 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 text-base text-[#1A1418] outline-none focus:border-[#A8001A]${aiRing('category_id')}`}
                       required
                     >
                       <option value="">Selecciona</option>
@@ -1525,7 +1889,7 @@ export default function Admin() {
                     <select
                       value={form.designer_id}
                       onChange={(event) => handleFormField('designer_id', event.target.value)}
-                      className="mt-1.5 min-h-11 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 text-base text-[#1A1418] outline-none focus:border-[#A8001A]"
+                      className={`mt-1.5 min-h-11 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 text-base text-[#1A1418] outline-none focus:border-[#A8001A]${aiRing('designer_id')}`}
                     >
                       <option value="">Sin asignar</option>
                       {designers.map((designer) => (
@@ -1542,7 +1906,7 @@ export default function Admin() {
                       value={form.description}
                       onChange={(event) => handleFormField('description', event.target.value)}
                       placeholder="Cuéntale a la clienta qué hace especial este disfraz y qué incluye."
-                      className="mt-1.5 min-h-28 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 py-2.5 text-base leading-[1.7] text-[#1A1418] outline-none focus:border-[#A8001A]"
+                      className={`mt-1.5 min-h-28 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 py-2.5 text-base leading-[1.7] text-[#1A1418] outline-none focus:border-[#A8001A]${aiRing('description')}`}
                     />
                   </label>
                 </div>
@@ -1554,7 +1918,7 @@ export default function Admin() {
                 <div className="grid gap-4 md:grid-cols-3">
                   <label className="block text-sm font-medium text-[#1A1418]">
                     Alquiler
-                    <span className="mt-1.5 flex min-h-11 items-center rounded-lg border border-[#1A1418]/20 bg-white px-3 focus-within:border-[#A8001A]">
+                    <span className={`mt-1.5 flex min-h-11 items-center rounded-lg border border-[#1A1418]/20 bg-white px-3 focus-within:border-[#A8001A]${aiRing('rental_price')}`}>
                       <input
                         value={formatCOPInput(form.rental_price)}
                         onChange={(event) => handleFormField('rental_price', parseCOPInput(event.target.value))}
@@ -1567,7 +1931,7 @@ export default function Admin() {
                   </label>
                   <label className="block text-sm font-medium text-[#1A1418]">
                     Venta
-                    <span className="mt-1.5 flex min-h-11 items-center rounded-lg border border-[#1A1418]/20 bg-white px-3 focus-within:border-[#A8001A]">
+                    <span className={`mt-1.5 flex min-h-11 items-center rounded-lg border border-[#1A1418]/20 bg-white px-3 focus-within:border-[#A8001A]${aiRing('sale_price')}`}>
                       <input
                         value={formatCOPInput(form.sale_price)}
                         onChange={(event) => handleFormField('sale_price', parseCOPInput(event.target.value))}
@@ -1579,7 +1943,7 @@ export default function Admin() {
                   </label>
                   <label className="block text-sm font-medium text-[#1A1418]">
                     Depósito reembolsable
-                    <span className="mt-1.5 flex min-h-11 items-center rounded-lg border border-[#1A1418]/20 bg-white px-3 focus-within:border-[#A8001A]">
+                    <span className={`mt-1.5 flex min-h-11 items-center rounded-lg border border-[#1A1418]/20 bg-white px-3 focus-within:border-[#A8001A]${aiRing('deposit_price')}`}>
                       <input
                         value={formatCOPInput(form.deposit_price)}
                         onChange={(event) => handleFormField('deposit_price', parseCOPInput(event.target.value))}
@@ -1804,7 +2168,13 @@ export default function Admin() {
                 </button>
               </div>
 
-              {!selectedCostumeId ? (
+              {!selectedCostumeId && aiDraft ? (
+                <p className="mb-4 rounded-lg bg-[#FFF8F5] p-3 text-sm leading-[1.6] text-[#1A1418]">
+                  Revisa lo que sugirió la IA: la ficha técnica se guarda junto con el disfraz.
+                </p>
+              ) : null}
+
+              {!selectedCostumeId && !aiDraft ? (
                 <p className="text-sm text-[#5C5257]">Selecciona o crea un disfraz para editar su ficha tecnica.</p>
               ) : (
                 <div className="grid gap-5 lg:grid-cols-2">
