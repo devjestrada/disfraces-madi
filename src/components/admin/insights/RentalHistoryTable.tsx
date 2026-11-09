@@ -93,7 +93,7 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
   const sortIndicator = (key: SortKey) => (key === sortKey ? (sortAsc ? '▲' : '▼') : '');
 
   return (
-    <div className="space-y-4 rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
+    <div className="space-y-4 rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <input
           value={searchQuery}
@@ -102,7 +102,7 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
             setPage(1);
           }}
           placeholder="Buscar por cliente, disfraz o factura..."
-          className="min-w-[220px] flex-1 rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+          className="min-w-[220px] flex-1 rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
         />
         <select
           value={categoryFilter}
@@ -110,7 +110,7 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
             setCategoryFilter(event.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+          className="rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
         >
           <option value="todas">Todas las categorías</option>
           {categoryOptions.map((category) => (
@@ -125,7 +125,7 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
             setLinkedFilter(event.target.value as LinkedFilter);
             setPage(1);
           }}
-          className="rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+          className="rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
         >
           <option value="todos">Vinculados y sin vincular</option>
           <option value="vinculados">Solo vinculados</option>
@@ -133,9 +133,9 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
         </select>
       </div>
 
-      <div className="max-h-[600px] overflow-y-auto rounded-xl border border-[#EFE1DB]">
+      <div className="max-h-[600px] overflow-y-auto rounded-xl border border-[#1A1418]/10">
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 bg-[#FFF8F5] text-xs font-semibold uppercase tracking-wide text-[#6E4B4B]">
+          <thead className="sticky top-0 bg-[#FFF8F5] text-xs font-semibold uppercase tracking-wide text-[#5C5257]">
             <tr>
               <th className="cursor-pointer px-3 py-2" onClick={() => handleSort('rental_date')}>
                 Fecha {sortIndicator('rental_date')}
@@ -156,7 +156,7 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
             {pageRows.map((row) => (
               <Fragment key={row.id}>
                 <tr
-                  className="cursor-pointer border-t border-[#EFE1DB] hover:bg-[#FFF4F6]"
+                  className="cursor-pointer border-t border-[#1A1418]/10 hover:bg-[#A8001A]/5"
                   onClick={() => setExpandedRowId((prev) => (prev === row.id ? null : row.id))}
                 >
                   <td className="px-3 py-2 font-mono text-xs">{row.rental_date ?? 'Sin fecha'}</td>
@@ -177,7 +177,7 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
                           event.stopPropagation();
                           onRequestLink(row.costume_label);
                         }}
-                        className="rounded-full bg-[#F3F0EF] px-2 py-1 text-[10px] font-semibold text-[#6E4B4B] hover:bg-[#E6D0C9]"
+                        className="rounded-full bg-[#1A1418]/5 px-2 py-1 text-[10px] font-semibold text-[#5C5257] hover:bg-[#1A1418]/10"
                       >
                         Sin vincular · Vincular
                       </button>
@@ -185,8 +185,8 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
                   </td>
                 </tr>
                 {expandedRowId === row.id ? (
-                  <tr className="border-t border-[#EFE1DB] bg-[#FFF8F5]">
-                    <td colSpan={5} className="px-3 py-3 text-xs text-[#6E4B4B]">
+                  <tr className="border-t border-[#1A1418]/10 bg-[#FFF8F5]">
+                    <td colSpan={5} className="px-3 py-3 text-xs text-[#5C5257]">
                       <div className="grid gap-1 sm:grid-cols-2">
                         <p>
                           <span className="font-semibold">Dirección:</span> {row.customer_address ?? '—'}
@@ -217,7 +217,7 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
             ))}
             {pageRows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-sm text-[#6E4B4B]">
+                <td colSpan={5} className="px-3 py-6 text-center text-sm text-[#5C5257]">
                   Sin registros que coincidan con la búsqueda/filtros.
                 </td>
               </tr>
@@ -226,7 +226,7 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
         </table>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-[#6E4B4B]">
+      <div className="flex items-center justify-between text-xs text-[#5C5257]">
         <span>
           {filteredRows.length} registro{filteredRows.length === 1 ? '' : 's'}
         </span>
@@ -235,7 +235,7 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((prev) => prev - 1)}
-            className="rounded border border-[#D6B8AE] px-2 py-1 disabled:opacity-40"
+            className="rounded border border-[#1A1418]/20 px-2 py-1 disabled:opacity-40"
           >
             Anterior
           </button>
@@ -246,7 +246,7 @@ export default function RentalHistoryTable({ rows, costumes, onRequestLink }: Re
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((prev) => prev + 1)}
-            className="rounded border border-[#D6B8AE] px-2 py-1 disabled:opacity-40"
+            className="rounded border border-[#1A1418]/20 px-2 py-1 disabled:opacity-40"
           >
             Siguiente
           </button>

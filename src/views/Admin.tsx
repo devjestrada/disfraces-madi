@@ -17,6 +17,7 @@ import type {
   CostumeSize,
 } from '../types';
 import {
+  countRentalHistoryForCostume,
   createAccessory,
   createCostume,
   createFabric,
@@ -48,9 +49,42 @@ import {
   updateFabric,
   uploadCostumeImage,
 } from '../services/adminService';
-import { formatCOPInput, parseCOPInput } from '../utils/format';
+import { formatCOP, formatCOPInput, parseCOPInput } from '../utils/format';
+import {
+  BarChart3,
+  LayoutDashboard,
+  LogOut,
+  Palette,
+  Settings,
+  Shirt,
+  Star,
+  Trash2,
+} from 'lucide-react';
 
 const InsightsSection = lazy(() => import('./admin/InsightsSection'));
+const ResumenSection = lazy(() => import('./admin/ResumenSection'));
+
+type AdminSection = 'resumen' | 'disfraces' | 'insights' | 'telas-accesorios' | 'configuracion';
+
+const ADMIN_SECTIONS: Array<{ id: AdminSection; label: string; icon: typeof Shirt }> = [
+  { id: 'resumen', label: 'Resumen', icon: LayoutDashboard },
+  { id: 'disfraces', label: 'Disfraces', icon: Shirt },
+  { id: 'insights', label: 'Insights', icon: BarChart3 },
+  { id: 'telas-accesorios', label: 'Telas y accesorios', icon: Palette },
+  { id: 'configuracion', label: 'Configuración del sitio', icon: Settings },
+];
+
+type ConfirmState = {
+  message: string;
+  onConfirm: () => void;
+  title?: string;
+  confirmLabel?: string;
+  destructive?: boolean;
+  details?: string[];
+  detailsTitle?: string;
+  confirmText?: string;
+  secondaryAction?: { label: string; description?: string; onClick: () => void };
+};
 
 type AdminCheckState = 'checking' | 'granted' | 'denied' | 'missing-config';
 
@@ -132,10 +166,8 @@ export default function Admin() {
   const [isSavingCostume, setIsSavingCostume] = useState(false);
   const [isLoadingPanelData, setIsLoadingPanelData] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
-  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
-  const [activeSection, setActiveSection] = useState<
-    'disfraces' | 'insights' | 'telas-accesorios' | 'configuracion'
-  >('disfraces');
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  const [activeSection, setActiveSection] = useState<AdminSection>('resumen');
   const [viewMode, setViewMode] = useState<'tabla' | 'lista' | 'galeria'>('lista');
   const disfracesRightColumnRef = useRef<HTMLDivElement | null>(null);
   const [disfracesLeftColumnHeight, setDisfracesLeftColumnHeight] = useState<number | undefined>(undefined);
@@ -427,7 +459,7 @@ export default function Admin() {
 
     const updateHeight = () => {
       setDisfracesLeftColumnHeight(
-        window.innerWidth >= 1024 ? node.getBoundingClientRect().height : undefined
+        window.innerWidth >= 1280 ? node.getBoundingClientRect().height : undefined
       );
     };
 
@@ -774,18 +806,64 @@ export default function Admin() {
     }
   };
 
-  const handleDeleteCostume = () => {
+  const handleDeleteCostume = async () => {
     if (!selectedCostumeId) {
       return;
     }
 
+    const costume = selectedCostume;
+    const costumeIdToDelete = selectedCostumeId;
+    const photoCount = images.length;
+    let rentalCount: number | null = null;
+    try {
+      rentalCount = await countRentalHistoryForCostume(costumeIdToDelete);
+    } catch {
+      rentalCount = null;
+    }
+
+    const rentalDetail =
+      rentalCount === null
+        ? 'Los alquileres del histórico vinculados a este disfraz quedan sin vincular y salen de los rankings.'
+        : rentalCount > 0
+          ? `${rentalCount} ${rentalCount === 1 ? 'alquiler del histórico queda' : 'alquileres del histórico quedan'} sin vincular y salen de los rankings.`
+          : 'No tiene alquileres vinculados en el histórico.';
+
     setConfirmState({
-      message: 'Se eliminara el disfraz y sus relaciones (detalles, tallas e imagenes). Deseas continuar?',
+      title: costume ? `¿Eliminar “${costume.name}”?` : '¿Eliminar este disfraz?',
+      message:
+        costume && costume.is_available
+          ? 'Si solo quieres que no salga en el sitio, ocúltalo: así no pierdes nada.'
+          : 'Este disfraz ya está oculto del catálogo. Eliminarlo borra toda su información.',
+      confirmLabel: 'Eliminar para siempre',
+      destructive: true,
+      detailsTitle: 'Si lo eliminas para siempre:',
+      details: [
+        `Se ${photoCount === 1 ? 'borra 1 foto' : `borran ${photoCount} fotos`}, sus tallas, detalles, telas y accesorios.`,
+        rentalDetail,
+        'Si tiene reseñas, quedan publicadas pero sin disfraz asociado.',
+        'Se pierden sus visitas y clics a WhatsApp en Insights. No se puede deshacer.',
+      ],
+      confirmText: costume?.slug,
+      secondaryAction:
+        costume && costume.is_available
+          ? {
+              label: 'Ocultar del catálogo',
+              description:
+                'Deja de verse en el sitio. Conservas fotos, ficha técnica e historial, y lo vuelves a mostrar cuando quieras.',
+              onClick: async () => {
+                setConfirmState(null);
+                const ok = await handleToggleFromList(costume, 'is_available');
+                if (ok) {
+                  notify(`Listo, “${costume.name}” ya no se ve en el sitio.`);
+                }
+              },
+            }
+          : undefined,
       onConfirm: async () => {
         setConfirmState(null);
         setToast(null);
         try {
-          await deleteCostume(selectedCostumeId);
+          await deleteCostume(costumeIdToDelete);
           const refreshed = await fetchAdminCostumes();
           setCostumes(refreshed);
           if (refreshed.length > 0) {
@@ -817,8 +895,10 @@ export default function Admin() {
       if (selectedCostumeId === costume.id) {
         setForm((prev) => ({ ...prev, [field]: nextValue }));
       }
+      return true;
     } catch (error) {
       notifyError(error);
+      return false;
     }
   };
 
@@ -979,14 +1059,14 @@ export default function Admin() {
   if (!session) {
     return (
       <section className="mx-auto w-full max-w-xl px-4 py-16">
-        <div className="rounded-2xl border border-[#E6D0C9] bg-white p-8 shadow-sm">
-          <h1 className="font-serif text-3xl text-[#4A1F1F]">Acceso administrativo</h1>
-          <p className="mt-2 text-sm text-[#6E4B4B]">
+        <div className="rounded-2xl border border-[#1A1418]/10 bg-white p-8 shadow-sm">
+          <h1 className="font-serif text-3xl text-[#1A1418]">Acceso administrativo</h1>
+          <p className="mt-2 text-sm text-[#5C5257]">
             Inicia sesion para gestionar catalogo e imagenes del Atelier.
           </p>
 
           <form className="mt-6 space-y-4" onSubmit={handleSignIn}>
-            <label className="block text-sm text-[#4A1F1F]" htmlFor="admin-email">
+            <label className="block text-sm text-[#1A1418]" htmlFor="admin-email">
               Correo
             </label>
             <input
@@ -996,10 +1076,10 @@ export default function Admin() {
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-[#3D1A1A] outline-none focus:border-[#A8001A]"
+              className="w-full rounded-lg border border-[#1A1418]/20 px-3 py-2 text-[#1A1418] outline-none focus:border-[#A8001A]"
             />
 
-            <label className="block text-sm text-[#4A1F1F]" htmlFor="admin-password">
+            <label className="block text-sm text-[#1A1418]" htmlFor="admin-password">
               Contrasena
             </label>
             <input
@@ -1009,7 +1089,7 @@ export default function Admin() {
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-[#3D1A1A] outline-none focus:border-[#A8001A]"
+              className="w-full rounded-lg border border-[#1A1418]/20 px-3 py-2 text-[#1A1418] outline-none focus:border-[#A8001A]"
             />
 
             {errorMessage ? <p className="text-sm text-[#A8001A]">{errorMessage}</p> : null}
@@ -1028,74 +1108,103 @@ export default function Admin() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-10">
+    <section className="mx-auto w-full max-w-[1440px] px-4 py-8 lg:px-8">
       <ConfirmDialog
         open={Boolean(confirmState)}
+        title={confirmState?.title}
         message={confirmState?.message ?? ''}
+        confirmLabel={confirmState?.confirmLabel}
+        destructive={confirmState?.destructive}
+        details={confirmState?.details}
+        detailsTitle={confirmState?.detailsTitle}
+        confirmText={confirmState?.confirmText}
+        secondaryAction={confirmState?.secondaryAction}
         onConfirm={() => confirmState?.onConfirm()}
         onCancel={() => setConfirmState(null)}
       />
 
-      <div className="mb-6 flex items-center justify-between rounded-2xl border border-[#E6D0C9] bg-white p-6 shadow-sm">
-        <div>
-          <h1 className="font-serif text-3xl text-[#4A1F1F]">Panel administrativo</h1>
-          <p className="mt-1 text-sm text-[#6E4B4B]">Sesion iniciada como {userEmail}</p>
-        </div>
-        <button
-          onClick={handleSignOut}
-          className="rounded-lg border border-[#A8001A] px-4 py-2 text-sm font-semibold text-[#A8001A]"
-        >
-          Cerrar sesion
-        </button>
-      </div>
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <aside className="flex flex-col gap-6 rounded-2xl border border-[#1A1418]/10 bg-white p-4 shadow-sm lg:w-64 lg:shrink-0 lg:p-5">
+          <div>
+            <h1 className="font-serif text-[22px] font-semibold leading-[1.3] text-[#1A1418]">Panel administrativo</h1>
+            <p className="mt-1 break-all text-xs font-medium text-[#5C5257]">Sesión iniciada como {userEmail}</p>
+          </div>
 
+          {adminState === 'granted' ? (
+            <nav aria-label="Secciones del panel" className="flex flex-wrap gap-1 lg:flex-col">
+              {ADMIN_SECTIONS.map((section) => {
+                const Icon = section.icon;
+                const isActive = activeSection === section.id;
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => setActiveSection(section.id)}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150 ease-out ${
+                      isActive
+                        ? 'bg-[#A8001A] text-[#FFF8F5]'
+                        : 'text-[#1A1418] hover:bg-[#A8001A]/5 hover:text-[#A8001A]'
+                    }`}
+                  >
+                    <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
+                    {section.label}
+                  </button>
+                );
+              })}
+            </nav>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#A8001A] px-4 text-sm font-medium text-[#A8001A] lg:mt-2"
+          >
+            <LogOut size={18} strokeWidth={1.75} aria-hidden="true" />
+            Cerrar sesión
+          </button>
+        </aside>
+
+        <div className="min-w-0 flex-1 space-y-6">
       {adminState === 'checking' ? (
-        <div className="rounded-2xl border border-[#E6D0C9] bg-white p-6 text-[#4A1F1F]">Validando permisos admin...</div>
+        <div className="rounded-2xl border border-[#1A1418]/10 bg-white p-6 text-[#1A1418]">Validando permisos admin...</div>
       ) : null}
 
       {adminState === 'missing-config' ? (
-        <div className="rounded-2xl border border-[#F2D3D8] bg-[#FFF5F7] p-6 text-[#7A1C2C]">
+        <div className="rounded-2xl border border-[#F3C9C5] bg-[#FDECEA] p-6 text-[#8C1D18]">
           {errorMessage || 'Falta configurar migraciones de administracion en Supabase.'}
         </div>
       ) : null}
 
       {adminState === 'denied' ? (
-        <div className="rounded-2xl border border-[#F2D3D8] bg-[#FFF5F7] p-6 text-[#7A1C2C]">
+        <div className="rounded-2xl border border-[#F3C9C5] bg-[#FDECEA] p-6 text-[#8C1D18]">
           {errorMessage || 'No tienes permisos para administrar este modulo.'}
         </div>
       ) : null}
 
       {adminState === 'granted' ? (
         <div className="space-y-6">
-          <div className="flex flex-wrap gap-2 rounded-2xl border border-[#E6D0C9] bg-white p-2 shadow-sm">
-            {(
-              [
-                { id: 'disfraces', label: 'Disfraces' },
-                { id: 'insights', label: 'Insights' },
-                { id: 'telas-accesorios', label: 'Telas y Accesorios' },
-                { id: 'configuracion', label: 'Configuracion del sitio' },
-              ] as const
-            ).map((section) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
-                  activeSection === section.id
-                    ? 'bg-[#A8001A] text-white'
-                    : 'text-[#4A1F1F] hover:bg-[#FFF4F6]'
-                }`}
-              >
-                {section.label}
-              </button>
-            ))}
-          </div>
-
           <Toast toast={toast} onDismiss={() => setToast(null)} />
 
+          {activeSection === 'resumen' ? (
+            <Suspense fallback={<p className="text-sm text-[#5C5257]">Cargando resumen...</p>}>
+              <ResumenSection
+                costumes={costumes}
+                onCreateNew={() => {
+                  handleCreateNew();
+                  setActiveSection('disfraces');
+                }}
+                onOpenCostume={handleNavigateToCostumeFromInsights}
+                onGoToInsights={() => setActiveSection('insights')}
+                onGoToCostumes={() => setActiveSection('disfraces')}
+              />
+            </Suspense>
+          ) : null}
+
           {activeSection === 'disfraces' ? (
-            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-6">
               <div
-                className="flex flex-col self-start overflow-hidden rounded-2xl border border-[#E6D0C9] bg-white p-4 shadow-sm"
+                className="flex flex-col self-start overflow-hidden rounded-2xl border border-[#1A1418]/10 bg-white p-4 shadow-sm"
                 style={
                   disfracesLeftColumnHeight
                     ? { maxHeight: `${disfracesLeftColumnHeight}px` }
@@ -1103,9 +1212,9 @@ export default function Admin() {
                 }
               >
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="font-serif text-xl text-[#4A1F1F]">Disfraces</h2>
+                  <h2 className="font-serif text-xl text-[#1A1418]">Disfraces</h2>
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex rounded-lg border border-[#D6B8AE] p-1">
+                    <div className="flex rounded-lg border border-[#1A1418]/20 p-1">
                       {(
                         [
                           { id: 'tabla', label: 'Tabla' },
@@ -1119,7 +1228,7 @@ export default function Admin() {
                           className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
                             viewMode === mode.id
                               ? 'bg-[#A8001A] text-white'
-                              : 'text-[#4A1F1F] hover:bg-[#FFF4F6]'
+                              : 'text-[#1A1418] hover:bg-[#A8001A]/5'
                           }`}
                         >
                           {mode.label}
@@ -1139,10 +1248,10 @@ export default function Admin() {
                   value={costumeSearchQuery}
                   onChange={(event) => setCostumeSearchQuery(event.target.value)}
                   placeholder="Buscar por nombre, slug o categoria..."
-                  className="mb-3 w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                  className="mb-3 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                 />
 
-                {isLoadingPanelData ? <p className="text-sm text-[#6E4B4B]">Cargando catalogo...</p> : null}
+                {isLoadingPanelData ? <p className="text-sm text-[#5C5257]">Cargando catalogo...</p> : null}
 
                 {viewMode === 'lista' ? (
                   <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -1151,16 +1260,16 @@ export default function Admin() {
                         key={costume.id}
                         className={`rounded-xl border p-3 ${
                           costume.id === selectedCostumeId
-                            ? 'border-[#A8001A] bg-[#FFF4F6]'
-                            : 'border-[#E6D0C9] bg-white'
+                            ? 'border-[#A8001A] bg-[#A8001A]/5'
+                            : 'border-[#1A1418]/10 bg-white'
                         }`}
                       >
                         <button
                           className="w-full text-left"
                           onClick={() => hydrateFormFromCostume(costume)}
                         >
-                          <h3 className="text-sm font-semibold text-[#4A1F1F]">{costume.name}</h3>
-                          <p className="mt-1 text-xs text-[#6E4B4B]">
+                          <h3 className="text-sm font-semibold text-[#1A1418]">{costume.name}</h3>
+                          <p className="mt-1 text-xs text-[#5C5257]">
                             {costume.category_name ?? 'Sin categoria'}
                           </p>
                         </button>
@@ -1171,7 +1280,7 @@ export default function Admin() {
                             className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
                               costume.is_available
                                 ? 'bg-[#EAF8EE] text-[#1B6F3A]'
-                                : 'bg-[#FCEDED] text-[#9E2D2D]'
+                                : 'bg-[#FDECEA] text-[#B3261E]'
                             }`}
                           >
                             {costume.is_available ? 'Disponible' : 'No disponible'}
@@ -1180,8 +1289,8 @@ export default function Admin() {
                             onClick={() => handleToggleFromList(costume, 'featured')}
                             className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
                               costume.featured
-                                ? 'bg-[#FFF7DE] text-[#8B5D00]'
-                                : 'bg-[#F3F0EF] text-[#6E4B4B]'
+                                ? 'bg-[#FDC003] text-[#1A1418]'
+                                : 'bg-[#1A1418]/5 text-[#5C5257]'
                             }`}
                           >
                             {costume.featured ? 'Destacado' : 'Normal'}
@@ -1193,55 +1302,88 @@ export default function Admin() {
                 ) : null}
 
                 {viewMode === 'tabla' ? (
-                  <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-[#EFE1DB]">
+                  <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-[#1A1418]/10">
                     <table className="w-full text-left text-sm">
-                      <thead className="sticky top-0 bg-[#FFF8F5] text-xs font-semibold uppercase tracking-wide text-[#6E4B4B]">
+                      <thead className="sticky top-0 bg-[#FFF8F5] text-xs font-semibold uppercase tracking-wide text-[#5C5257]">
                         <tr>
-                          <th className="px-3 py-2">Nombre</th>
-                          <th className="px-3 py-2">Categoria</th>
-                          <th className="px-3 py-2">Disponible</th>
-                          <th className="px-3 py-2">Destacado</th>
+                          <th className="px-3 py-2">Disfraz</th>
+                          <th className="px-3 py-2 text-right">Precios</th>
+                          <th className="px-2 py-2">Disponible</th>
+                          <th className="px-2 py-2">
+                            <span className="sr-only">Destacado</span>
+                            <Star size={14} strokeWidth={1.75} aria-hidden="true" />
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredAdminCostumes.map((costume) => (
                           <tr
                             key={costume.id}
-                            className={`border-t border-[#EFE1DB] ${
-                              costume.id === selectedCostumeId ? 'bg-[#FFF4F6]' : 'bg-white'
+                            className={`border-t border-[#1A1418]/10 ${
+                              costume.id === selectedCostumeId ? 'bg-[#A8001A]/5' : 'bg-white'
                             }`}
                           >
                             <td className="px-3 py-2">
                               <button
                                 onClick={() => hydrateFormFromCostume(costume)}
-                                className="text-left font-semibold text-[#4A1F1F] hover:text-[#A8001A]"
+                                className="text-left font-semibold text-[#1A1418] hover:text-[#A8001A]"
                               >
                                 {costume.name}
+                                <span className="block text-xs font-normal text-[#5C5257]">
+                                  {costume.category_name ?? 'Sin categoria'}
+                                </span>
                               </button>
                             </td>
-                            <td className="px-3 py-2 text-[#6E4B4B]">{costume.category_name ?? 'Sin categoria'}</td>
-                            <td className="px-3 py-2">
+                            <td className="whitespace-nowrap px-3 py-2 text-right">
+                              {costume.rental_price !== null ? (
+                                <span className="block font-mono font-medium text-[#1A1418]">{formatCOP(costume.rental_price)}</span>
+                              ) : (
+                                <span className="block text-xs font-medium text-[#5C5257]">Solo venta</span>
+                              )}
+                              {costume.deposit_price !== null ? (
+                                <span className="block font-mono text-xs text-[#5C5257]">Dep. {formatCOP(costume.deposit_price)}</span>
+                              ) : (
+                                <span className="block text-xs font-medium text-[#B3261E]">Sin depósito</span>
+                              )}
+                            </td>
+                            <td className="px-2 py-2">
                               <button
+                                type="button"
+                                role="switch"
+                                aria-checked={costume.is_available}
+                                aria-label={`Disponible: ${costume.name}`}
                                 onClick={() => handleToggleFromList(costume, 'is_available')}
-                                className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                                  costume.is_available
-                                    ? 'bg-[#EAF8EE] text-[#1B6F3A]'
-                                    : 'bg-[#FCEDED] text-[#9E2D2D]'
-                                }`}
+                                className="flex min-h-10 items-center gap-2 text-xs font-medium text-[#1A1418]"
                               >
-                                {costume.is_available ? 'Disponible' : 'No disponible'}
+                                <span
+                                  aria-hidden="true"
+                                  className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150 ease-out ${
+                                    costume.is_available ? 'bg-[#1B6F3A]' : 'bg-[#1A1418]/20'
+                                  }`}
+                                >
+                                  <span
+                                    className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-all duration-150 ease-out ${
+                                      costume.is_available ? 'left-[19px]' : 'left-[3px]'
+                                    }`}
+                                  />
+                                </span>
+                                {costume.is_available ? 'Sí' : 'Oculto'}
                               </button>
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-2 py-2">
                               <button
+                                type="button"
+                                aria-pressed={costume.featured}
+                                aria-label={`Destacado: ${costume.name}`}
                                 onClick={() => handleToggleFromList(costume, 'featured')}
-                                className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                                  costume.featured
-                                    ? 'bg-[#FFF7DE] text-[#8B5D00]'
-                                    : 'bg-[#F3F0EF] text-[#6E4B4B]'
-                                }`}
+                                className="flex h-10 w-10 items-center justify-center rounded-lg"
                               >
-                                {costume.featured ? 'Destacado' : 'Normal'}
+                                <Star
+                                  size={20}
+                                  strokeWidth={1.75}
+                                  aria-hidden="true"
+                                  className={costume.featured ? 'fill-[#FDC003] text-[#987302]' : 'text-[#5C5257]'}
+                                />
                               </button>
                             </td>
                           </tr>
@@ -1258,12 +1400,12 @@ export default function Admin() {
                         key={costume.id}
                         className={`cursor-pointer rounded-xl border p-3 ${
                           costume.id === selectedCostumeId
-                            ? 'border-[#A8001A] bg-[#FFF4F6]'
-                            : 'border-[#E6D0C9] bg-white'
+                            ? 'border-[#A8001A] bg-[#A8001A]/5'
+                            : 'border-[#1A1418]/10 bg-white'
                         }`}
                         onClick={() => hydrateFormFromCostume(costume)}
                       >
-                        <div className="flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-lg bg-[#F3F0EF]">
+                        <div className="flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-lg bg-[#1A1418]/5">
                           {costume.primary_image ? (
                             <img
                               src={getAdminImageUrl(costume.primary_image)}
@@ -1271,11 +1413,11 @@ export default function Admin() {
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <span className="text-xs text-[#6E4B4B]">Sin imagen</span>
+                            <span className="text-xs text-[#5C5257]">Sin imagen</span>
                           )}
                         </div>
-                        <h3 className="mt-2 text-sm font-semibold text-[#4A1F1F]">{costume.name}</h3>
-                        <p className="text-xs text-[#6E4B4B]">{costume.category_name ?? 'Sin categoria'}</p>
+                        <h3 className="mt-2 text-sm font-semibold text-[#1A1418]">{costume.name}</h3>
+                        <p className="text-xs text-[#5C5257]">{costume.category_name ?? 'Sin categoria'}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <button
                             onClick={(event) => {
@@ -1285,7 +1427,7 @@ export default function Admin() {
                             className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
                               costume.is_available
                                 ? 'bg-[#EAF8EE] text-[#1B6F3A]'
-                                : 'bg-[#FCEDED] text-[#9E2D2D]'
+                                : 'bg-[#FDECEA] text-[#B3261E]'
                             }`}
                           >
                             {costume.is_available ? 'Disponible' : 'No disponible'}
@@ -1297,8 +1439,8 @@ export default function Admin() {
                             }}
                             className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
                               costume.featured
-                                ? 'bg-[#FFF7DE] text-[#8B5D00]'
-                                : 'bg-[#F3F0EF] text-[#6E4B4B]'
+                                ? 'bg-[#FDC003] text-[#1A1418]'
+                                : 'bg-[#1A1418]/5 text-[#5C5257]'
                             }`}
                           >
                             {costume.featured ? 'Destacado' : 'Normal'}
@@ -1313,153 +1455,213 @@ export default function Admin() {
               <div className="space-y-6" ref={disfracesRightColumnRef}>
               <form
               onSubmit={handleSaveCostume}
-              className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm"
+              className="rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm sm:p-6"
             >
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-serif text-2xl text-[#4A1F1F]">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-serif text-[28px] font-semibold leading-[1.25] text-[#1A1418]">
                   {selectedCostumeId ? 'Editar disfraz' : 'Nuevo disfraz'}
                 </h2>
                 {selectedCostumeId ? (
                   <button
                     type="button"
                     onClick={handleDeleteCostume}
-                    className="rounded-lg border border-[#A8001A] px-3 py-1.5 text-xs font-semibold text-[#A8001A]"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-[#5C5257] transition-colors duration-150 ease-out hover:text-[#B3261E]"
                   >
-                    Eliminar
+                    <Trash2 size={18} strokeWidth={1.75} aria-hidden="true" />
+                    Eliminar u ocultar
                   </button>
                 ) : null}
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="text-sm text-[#4A1F1F]">
-                  Nombre
-                  <input
-                    value={form.name}
-                    onChange={(event) => handleFormField('name', event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                    required
-                  />
-                </label>
+              <fieldset className="space-y-4">
+                <legend className="mb-3 text-xs font-medium uppercase tracking-wide text-[#5C5257]">Datos básicos</legend>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="block text-sm font-medium text-[#1A1418]">
+                    Nombre del disfraz
+                    <input
+                      value={form.name}
+                      onChange={(event) => handleFormField('name', event.target.value)}
+                      placeholder="Ej.: Marimonda de Barrio Abajo"
+                      className="mt-1.5 min-h-11 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 text-base text-[#1A1418] outline-none focus:border-[#A8001A]"
+                      required
+                    />
+                  </label>
 
-                <label className="text-sm text-[#4A1F1F]">
-                  Slug
-                  <input
-                    value={form.slug}
-                    onChange={(event) => handleFormField('slug', slugify(event.target.value))}
-                    className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                    required
-                  />
-                </label>
+                  <label className="block text-sm font-medium text-[#1A1418]">
+                    Dirección en el sitio
+                    <span className="mt-1.5 flex min-h-11 items-center rounded-lg border border-[#1A1418]/20 bg-[#FFF8F5] focus-within:border-[#A8001A]">
+                      <span aria-hidden="true" className="pl-3 pr-1 font-mono text-xs text-[#5C5257]">/catalogo/</span>
+                      <input
+                        value={form.slug}
+                        onChange={(event) => handleFormField('slug', slugify(event.target.value))}
+                        className="w-full min-w-0 bg-transparent pr-3 font-mono text-[13px] tracking-[0.5px] text-[#1A1418] outline-none"
+                        required
+                      />
+                    </span>
+                    <span className="mt-1 block text-xs font-medium text-[#5C5257]">
+                      Se arma sola con el nombre. Cámbiala solo si hace falta.
+                    </span>
+                  </label>
 
-                <label className="text-sm text-[#4A1F1F]">
-                  Categoria
-                  <select
-                    value={form.category_id}
-                    onChange={(event) => handleFormField('category_id', event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                    required
+                  <label className="block text-sm font-medium text-[#1A1418]">
+                    Categoría
+                    <select
+                      value={form.category_id}
+                      onChange={(event) => handleFormField('category_id', event.target.value)}
+                      className="mt-1.5 min-h-11 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 text-base text-[#1A1418] outline-none focus:border-[#A8001A]"
+                      required
+                    >
+                      <option value="">Selecciona</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block text-sm font-medium text-[#1A1418]">
+                    Diseñadora
+                    <select
+                      value={form.designer_id}
+                      onChange={(event) => handleFormField('designer_id', event.target.value)}
+                      className="mt-1.5 min-h-11 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 text-base text-[#1A1418] outline-none focus:border-[#A8001A]"
+                    >
+                      <option value="">Sin asignar</option>
+                      {designers.map((designer) => (
+                        <option key={designer.id} value={designer.id}>
+                          {designer.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block text-sm font-medium text-[#1A1418] md:col-span-2">
+                    Descripción
+                    <textarea
+                      value={form.description}
+                      onChange={(event) => handleFormField('description', event.target.value)}
+                      placeholder="Cuéntale a la clienta qué hace especial este disfraz y qué incluye."
+                      className="mt-1.5 min-h-28 w-full rounded-lg border border-[#1A1418]/20 bg-white px-3 py-2.5 text-base leading-[1.7] text-[#1A1418] outline-none focus:border-[#A8001A]"
+                    />
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset className="mt-6 space-y-4 border-t border-[#1A1418]/10 pt-5">
+                <legend className="sr-only">Precios</legend>
+                <p aria-hidden="true" className="text-xs font-medium uppercase tracking-wide text-[#5C5257]">Precios</p>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <label className="block text-sm font-medium text-[#1A1418]">
+                    Alquiler
+                    <span className="mt-1.5 flex min-h-11 items-center rounded-lg border border-[#1A1418]/20 bg-white px-3 focus-within:border-[#A8001A]">
+                      <input
+                        value={formatCOPInput(form.rental_price)}
+                        onChange={(event) => handleFormField('rental_price', parseCOPInput(event.target.value))}
+                        className="w-full min-w-0 bg-transparent font-mono text-base font-medium text-[#1A1418] outline-none"
+                        type="text"
+                        inputMode="numeric"
+                      />
+                    </span>
+                    <span className="mt-1 block text-xs font-medium text-[#5C5257]">Vacío = se publica solo el precio de venta.</span>
+                  </label>
+                  <label className="block text-sm font-medium text-[#1A1418]">
+                    Venta
+                    <span className="mt-1.5 flex min-h-11 items-center rounded-lg border border-[#1A1418]/20 bg-white px-3 focus-within:border-[#A8001A]">
+                      <input
+                        value={formatCOPInput(form.sale_price)}
+                        onChange={(event) => handleFormField('sale_price', parseCOPInput(event.target.value))}
+                        className="w-full min-w-0 bg-transparent font-mono text-base font-medium text-[#1A1418] outline-none"
+                        type="text"
+                        inputMode="numeric"
+                      />
+                    </span>
+                  </label>
+                  <label className="block text-sm font-medium text-[#1A1418]">
+                    Depósito reembolsable
+                    <span className="mt-1.5 flex min-h-11 items-center rounded-lg border border-[#1A1418]/20 bg-white px-3 focus-within:border-[#A8001A]">
+                      <input
+                        value={formatCOPInput(form.deposit_price)}
+                        onChange={(event) => handleFormField('deposit_price', parseCOPInput(event.target.value))}
+                        className="w-full min-w-0 bg-transparent font-mono text-base font-medium text-[#1A1418] outline-none"
+                        type="text"
+                        inputMode="numeric"
+                      />
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset className="mt-6 border-t border-[#1A1418]/10 pt-5">
+                <legend className="sr-only">Visibilidad</legend>
+                <p aria-hidden="true" className="mb-1 text-xs font-medium uppercase tracking-wide text-[#5C5257]">Visibilidad</p>
+                <div className="grid gap-x-6 md:grid-cols-2">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={form.is_available}
+                  onClick={() => handleFormField('is_available', !form.is_available)}
+                  className="flex min-h-14 w-full items-center justify-between gap-4 text-left"
+                >
+                  <span>
+                    <span className="block text-sm font-medium text-[#1A1418]">Disponible en el catálogo</span>
+                    <span className="block text-xs font-medium text-[#5C5257]">Si lo apagas, el disfraz no aparece en el sitio.</span>
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-150 ease-out ${
+                      form.is_available ? 'bg-[#1B6F3A]' : 'bg-[#1A1418]/20'
+                    }`}
                   >
-                    <option value="">Selecciona</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="text-sm text-[#4A1F1F]">
-                  Diseñadora
-                  <select
-                    value={form.designer_id}
-                    onChange={(event) => handleFormField('designer_id', event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                    <span
+                      className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-all duration-150 ease-out ${
+                        form.is_available ? 'left-[23px]' : 'left-[3px]'
+                      }`}
+                    />
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={form.featured}
+                  onClick={() => handleFormField('featured', !form.featured)}
+                  className="flex min-h-14 w-full items-center justify-between gap-4 text-left"
+                >
+                  <span>
+                    <span className="block text-sm font-medium text-[#1A1418]">Destacado en inicio</span>
+                    <span className="block text-xs font-medium text-[#5C5257]">Aparece entre los favoritos de la temporada.</span>
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-150 ease-out ${
+                      form.featured ? 'bg-[#1B6F3A]' : 'bg-[#1A1418]/20'
+                    }`}
                   >
-                    <option value="">Sin asignar</option>
-                    {designers.map((designer) => (
-                      <option key={designer.id} value={designer.id}>
-                        {designer.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <span
+                      className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-all duration-150 ease-out ${
+                        form.featured ? 'left-[23px]' : 'left-[3px]'
+                      }`}
+                    />
+                  </span>
+                </button>
+                </div>
+              </fieldset>
 
-                <label className="text-sm text-[#4A1F1F]">
-                  Precio alquiler (interno)
-                  <input
-                    value={formatCOPInput(form.rental_price)}
-                    onChange={(event) => handleFormField('rental_price', parseCOPInput(event.target.value))}
-                    className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                    type="text"
-                    inputMode="numeric"
-                  />
-                </label>
-
-                <label className="text-sm text-[#4A1F1F]">
-                  Precio venta (interno)
-                  <input
-                    value={formatCOPInput(form.sale_price)}
-                    onChange={(event) => handleFormField('sale_price', parseCOPInput(event.target.value))}
-                    className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                    type="text"
-                    inputMode="numeric"
-                  />
-                </label>
-
-                <label className="text-sm text-[#4A1F1F]">
-                  Deposito (interno)
-                  <input
-                    value={formatCOPInput(form.deposit_price)}
-                    onChange={(event) => handleFormField('deposit_price', parseCOPInput(event.target.value))}
-                    className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                    type="text"
-                    inputMode="numeric"
-                  />
-                </label>
-
-                <label className="text-sm text-[#4A1F1F] md:col-span-2">
-                  Descripcion
-                  <textarea
-                    value={form.description}
-                    onChange={(event) => handleFormField('description', event.target.value)}
-                    className="mt-1 min-h-24 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
-                  />
-                </label>
-
-                <label className="flex items-center gap-2 text-sm text-[#4A1F1F]">
-                  <input
-                    type="checkbox"
-                    checked={form.is_available}
-                    onChange={(event) => handleFormField('is_available', event.target.checked)}
-                  />
-                  Disponible
-                </label>
-
-                <label className="flex items-center gap-2 text-sm text-[#4A1F1F]">
-                  <input
-                    type="checkbox"
-                    checked={form.featured}
-                    onChange={(event) => handleFormField('featured', event.target.checked)}
-                  />
-                  Destacado
-                </label>
-              </div>
-
-              <div className="mt-4 flex justify-end">
+              <div className="mt-6 flex justify-end border-t border-[#1A1418]/10 pt-5">
                 <button
                   type="submit"
                   disabled={isSavingCostume}
-                  className="rounded-lg bg-[#A8001A] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  className="min-h-11 rounded-lg bg-[#A8001A] px-6 text-[15px] font-medium text-[#FFF8F5] transition-colors duration-150 ease-out hover:bg-[#860015] disabled:opacity-60"
                 >
-                  {isSavingCostume ? 'Guardando...' : 'Guardar disfraz'}
+                  {isSavingCostume ? 'Guardando...' : selectedCostumeId ? 'Guardar cambios' : 'Guardar disfraz'}
                 </button>
               </div>
             </form>
 
-            <section className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-serif text-2xl text-[#4A1F1F]">Galeria de imagenes</h2>
-                <label className="rounded-lg bg-[#4A1F1F] px-3 py-2 text-xs font-semibold text-white">
+                <h2 className="font-serif text-2xl text-[#1A1418]">Galeria de imagenes</h2>
+                <label className="rounded-lg bg-[#1A1418] px-3 py-2 text-xs font-semibold text-white">
                   Cargar imagenes
                   <input
                     type="file"
@@ -1473,16 +1675,16 @@ export default function Admin() {
               </div>
 
               {!selectedCostumeId ? (
-                <p className="text-sm text-[#6E4B4B]">Guarda primero un disfraz para habilitar su galeria.</p>
+                <p className="text-sm text-[#5C5257]">Guarda primero un disfraz para habilitar su galeria.</p>
               ) : null}
 
-              {isLoadingImages ? <p className="text-sm text-[#6E4B4B]">Cargando imagenes...</p> : null}
+              {isLoadingImages ? <p className="text-sm text-[#5C5257]">Cargando imagenes...</p> : null}
 
               {uploadQueue.length > 0 ? (
-                <ul className="mt-3 space-y-1.5 rounded-lg border border-[#E6D0C9] p-3">
+                <ul className="mt-3 space-y-1.5 rounded-lg border border-[#1A1418]/10 p-3">
                   {uploadQueue.map((item, index) => (
                     <li key={item.id} className="flex items-center justify-between gap-2 text-xs">
-                      <span className="truncate text-[#4A1F1F]">
+                      <span className="truncate text-[#1A1418]">
                         {index + 1}/{uploadQueue.length} {item.name}
                       </span>
                       <span
@@ -1493,7 +1695,7 @@ export default function Admin() {
                             ? 'font-semibold text-green-700'
                             : item.status === 'uploading'
                             ? 'font-semibold text-[#A8001A]'
-                            : 'text-[#6E4B4B]'
+                            : 'text-[#5C5257]'
                         }
                       >
                         {item.status === 'pending' && 'En espera'}
@@ -1508,28 +1710,28 @@ export default function Admin() {
 
               <div className="mt-4 grid max-h-[1465px] gap-4 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
                 {images.map((image, index) => (
-                  <article key={image.id} className="rounded-xl border border-[#E6D0C9] p-3">
+                  <article key={image.id} className="rounded-xl border border-[#1A1418]/10 p-3">
                     <img
                       src={getAdminImageUrl(image.storage_path)}
                       alt={image.alt_text ?? 'Imagen del disfraz'}
                       className="aspect-[4/5] w-full rounded-lg object-cover"
                     />
                     <div className="mt-2 flex items-center justify-between text-xs">
-                      <span className={image.is_primary ? 'font-semibold text-[#A8001A]' : 'text-[#6E4B4B]'}>
+                      <span className={image.is_primary ? 'font-semibold text-[#A8001A]' : 'text-[#5C5257]'}>
                         {image.is_primary ? 'Principal' : `Orden ${image.sort_order + 1}`}
                       </span>
                       <div className="flex gap-1">
                         <button
                           disabled={index === 0}
                           onClick={() => handleMoveImage(image.id, 'up')}
-                          className="rounded border border-[#D6B8AE] px-2 py-1 disabled:opacity-40"
+                          className="rounded border border-[#1A1418]/20 px-2 py-1 disabled:opacity-40"
                         >
                           Subir
                         </button>
                         <button
                           disabled={index === images.length - 1}
                           onClick={() => handleMoveImage(image.id, 'down')}
-                          className="rounded border border-[#D6B8AE] px-2 py-1 disabled:opacity-40"
+                          className="rounded border border-[#1A1418]/20 px-2 py-1 disabled:opacity-40"
                         >
                           Bajar
                         </button>
@@ -1542,14 +1744,14 @@ export default function Admin() {
                         onChange={(event) => handleAltTextChange(image, event.target.value)}
                         onBlur={() => handleAltTextBlur(image)}
                         placeholder="Texto alternativo"
-                        className="w-full rounded-lg border border-[#D6B8AE] px-2 py-1 text-xs"
+                        className="w-full rounded-lg border border-[#1A1418]/20 px-2 py-1 text-xs"
                       />
                       <span
                         className={
                           altSaveStatus[image.id] === 'error'
                             ? 'shrink-0 text-[10px] font-semibold text-red-600'
                             : altSaveStatus[image.id] === 'saving'
-                            ? 'shrink-0 text-[10px] font-semibold text-[#6E4B4B]'
+                            ? 'shrink-0 text-[10px] font-semibold text-[#5C5257]'
                             : altSaveStatus[image.id] === 'saved'
                             ? 'shrink-0 text-[10px] font-semibold text-green-700'
                             : 'shrink-0 text-[10px] text-transparent'
@@ -1565,7 +1767,7 @@ export default function Admin() {
                     <div className="mt-2 flex flex-wrap gap-2">
                       <button
                         onClick={() => handleAltTextBlur(image)}
-                        className="rounded border border-[#4A1F1F] px-2 py-1 text-xs text-[#4A1F1F]"
+                        className="rounded border border-[#1A1418] px-2 py-1 text-xs text-[#1A1418]"
                       >
                         Guardar alt
                       </button>
@@ -1589,53 +1791,53 @@ export default function Admin() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-serif text-2xl text-[#4A1F1F]">Ficha tecnica del disfraz</h2>
+                <h2 className="font-serif text-2xl text-[#1A1418]">Ficha tecnica del disfraz</h2>
                 <button
                   type="button"
                   onClick={handleSaveRelations}
                   disabled={!selectedCostumeId || isSavingRelations}
-                  className="rounded-lg bg-[#4A1F1F] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                  className="rounded-lg bg-[#1A1418] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
                 >
                   {isSavingRelations ? 'Guardando...' : 'Guardar ficha'}
                 </button>
               </div>
 
               {!selectedCostumeId ? (
-                <p className="text-sm text-[#6E4B4B]">Selecciona o crea un disfraz para editar su ficha tecnica.</p>
+                <p className="text-sm text-[#5C5257]">Selecciona o crea un disfraz para editar su ficha tecnica.</p>
               ) : (
                 <div className="grid gap-5 lg:grid-cols-2">
                   <div>
-                    <h3 className="text-sm font-semibold text-[#4A1F1F]">Detalles visibles</h3>
-                    <p className="mt-1 text-xs text-[#6E4B4B]">Un detalle por linea, en el orden deseado.</p>
+                    <h3 className="text-sm font-semibold text-[#1A1418]">Detalles visibles</h3>
+                    <p className="mt-1 text-xs text-[#5C5257]">Un detalle por linea, en el orden deseado.</p>
                     <textarea
                       value={detailsText}
                       onChange={(event) => setDetailsText(event.target.value)}
-                      className="mt-2 min-h-36 w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                      className="mt-2 min-h-36 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                       placeholder={'Incluye tocado artesanal\nForro interno transpirable\nIdeal para comparsa'}
                     />
                   </div>
 
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-sm font-semibold text-[#4A1F1F]">Telas</h3>
+                      <h3 className="text-sm font-semibold text-[#1A1418]">Telas</h3>
                       <div className="mt-2 flex gap-2">
                         <input
                           value={newFabricName}
                           onChange={(event) => setNewFabricName(event.target.value)}
                           placeholder="Nueva tela"
-                          className="w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                          className="w-full rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                         />
                         <button
                           type="button"
                           onClick={handleCreateFabric}
-                          className="rounded-lg border border-[#4A1F1F] px-3 py-2 text-xs font-semibold text-[#4A1F1F]"
+                          className="rounded-lg border border-[#1A1418] px-3 py-2 text-xs font-semibold text-[#1A1418]"
                         >
                           Crear
                         </button>
                       </div>
-                      <div className="mt-2 grid max-h-32 gap-1 overflow-auto rounded-lg border border-[#EFE1DB] p-2 text-sm">
+                      <div className="mt-2 grid max-h-32 gap-1 overflow-auto rounded-lg border border-[#1A1418]/10 p-2 text-sm">
                         {fabrics.map((fabric) => (
                           <label key={fabric.id} className="flex items-center gap-2">
                             <input
@@ -1656,7 +1858,7 @@ export default function Admin() {
                             .map((fabric) => (
                               <span
                                 key={fabric.id}
-                                className="rounded-full border border-[#A8001A]/30 bg-[#FFF4F6] px-2.5 py-1 text-xs font-semibold text-[#A8001A]"
+                                className="rounded-full border border-[#A8001A]/30 bg-[#A8001A]/5 px-2.5 py-1 text-xs font-semibold text-[#A8001A]"
                               >
                                 {fabric.name}
                               </span>
@@ -1666,23 +1868,23 @@ export default function Admin() {
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-semibold text-[#4A1F1F]">Accesorios</h3>
+                      <h3 className="text-sm font-semibold text-[#1A1418]">Accesorios</h3>
                       <div className="mt-2 flex gap-2">
                         <input
                           value={newAccessoryName}
                           onChange={(event) => setNewAccessoryName(event.target.value)}
                           placeholder="Nuevo accesorio"
-                          className="w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                          className="w-full rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                         />
                         <button
                           type="button"
                           onClick={handleCreateAccessory}
-                          className="rounded-lg border border-[#4A1F1F] px-3 py-2 text-xs font-semibold text-[#4A1F1F]"
+                          className="rounded-lg border border-[#1A1418] px-3 py-2 text-xs font-semibold text-[#1A1418]"
                         >
                           Crear
                         </button>
                       </div>
-                      <div className="mt-2 grid max-h-32 gap-1 overflow-auto rounded-lg border border-[#EFE1DB] p-2 text-sm">
+                      <div className="mt-2 grid max-h-32 gap-1 overflow-auto rounded-lg border border-[#1A1418]/10 p-2 text-sm">
                         {accessories.map((accessory) => (
                           <label key={accessory.id} className="flex items-center gap-2">
                             <input
@@ -1707,7 +1909,7 @@ export default function Admin() {
                             .map((accessory) => (
                               <span
                                 key={accessory.id}
-                                className="rounded-full border border-[#A8001A]/30 bg-[#FFF4F6] px-2.5 py-1 text-xs font-semibold text-[#A8001A]"
+                                className="rounded-full border border-[#A8001A]/30 bg-[#A8001A]/5 px-2.5 py-1 text-xs font-semibold text-[#A8001A]"
                               >
                                 {accessory.name}
                               </span>
@@ -1717,23 +1919,35 @@ export default function Admin() {
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-semibold text-[#4A1F1F]">Tallas disponibles</h3>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {SIZE_OPTIONS.map((size) => (
-                          <button
-                            key={size}
-                            type="button"
-                            onClick={() => toggleSize(size)}
-                            className={`rounded-md border px-3 py-1 text-xs font-semibold ${
-                              selectedSizes.includes(size)
-                                ? 'border-[#A8001A] bg-[#FFF1F4] text-[#A8001A]'
-                                : 'border-[#D6B8AE] text-[#6E4B4B]'
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
+                      <h3 className="text-sm font-semibold text-[#1A1418]">Tallas disponibles</h3>
+                      {[
+                        { label: 'Adulto', sizes: SIZE_OPTIONS.filter((size) => Number.isNaN(Number(size))) },
+                        { label: 'Niño', sizes: SIZE_OPTIONS.filter((size) => !Number.isNaN(Number(size))) },
+                      ].map((group) => (
+                        <div key={group.label} className="mt-3" role="group" aria-label={`Tallas ${group.label.toLowerCase()}`}>
+                          <p className="text-xs font-medium text-[#5C5257]">{group.label}</p>
+                          <div className="mt-1.5 flex flex-wrap gap-2">
+                            {group.sizes.map((size) => {
+                              const isSelected = selectedSizes.includes(size);
+                              return (
+                                <button
+                                  key={size}
+                                  type="button"
+                                  aria-pressed={isSelected}
+                                  onClick={() => toggleSize(size)}
+                                  className={`min-h-10 min-w-12 rounded-lg border px-3 font-mono text-sm font-medium transition-colors duration-150 ease-out ${
+                                    isSelected
+                                      ? 'border-[#A8001A] bg-[#A8001A] text-[#FFF8F5]'
+                                      : 'border-[#1A1418]/20 bg-white text-[#1A1418] hover:border-[#A8001A]'
+                                  }`}
+                                >
+                                  {size}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1745,19 +1959,19 @@ export default function Admin() {
 
           {activeSection === 'telas-accesorios' ? (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
-                <h2 className="font-serif text-xl text-[#4A1F1F]">Telas</h2>
+              <div className="rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm">
+                <h2 className="font-serif text-xl text-[#1A1418]">Telas</h2>
                 <div className="mt-3 flex gap-2">
                   <input
                     value={newFabricNameTab}
                     onChange={(event) => setNewFabricNameTab(event.target.value)}
                     placeholder="Nueva tela"
-                    className="w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                   />
                   <button
                     type="button"
                     onClick={handleCreateFabricTab}
-                    className="rounded-lg border border-[#4A1F1F] px-3 py-2 text-xs font-semibold text-[#4A1F1F]"
+                    className="rounded-lg border border-[#1A1418] px-3 py-2 text-xs font-semibold text-[#1A1418]"
                   >
                     Crear
                   </button>
@@ -1766,22 +1980,22 @@ export default function Admin() {
                   value={fabricSearchQuery}
                   onChange={(event) => setFabricSearchQuery(event.target.value)}
                   placeholder="Buscar tela..."
-                  className="mt-3 w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                  className="mt-3 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                 />
                 <ul className="mt-4 space-y-2">
                   {filteredFabrics.map((fabric) => (
                     <li
                       key={fabric.id}
-                      className="flex items-center justify-between gap-2 rounded-lg border border-[#EFE1DB] px-3 py-2"
+                      className="flex items-center justify-between gap-2 rounded-lg border border-[#1A1418]/10 px-3 py-2"
                     >
                       {editingFabric?.id === fabric.id ? (
                         <input
                           value={editingFabric.name}
                           onChange={(event) => setEditingFabric({ id: fabric.id, name: event.target.value })}
-                          className="w-full rounded-lg border border-[#D6B8AE] px-2 py-1 text-sm"
+                          className="w-full rounded-lg border border-[#1A1418]/20 px-2 py-1 text-sm"
                         />
                       ) : (
-                        <span className="text-sm text-[#4A1F1F]">{fabric.name}</span>
+                        <span className="text-sm text-[#1A1418]">{fabric.name}</span>
                       )}
                       <div className="flex shrink-0 items-center gap-1">
                         <UsageTooltip costumeNames={fabricUsage.get(fabric.id) ?? []} />
@@ -1795,7 +2009,7 @@ export default function Admin() {
                         ) : (
                           <button
                             onClick={() => setEditingFabric({ id: fabric.id, name: fabric.name })}
-                            className="rounded border border-[#4A1F1F] px-2 py-1 text-xs text-[#4A1F1F]"
+                            className="rounded border border-[#1A1418] px-2 py-1 text-xs text-[#1A1418]"
                           >
                             Editar
                           </button>
@@ -1812,19 +2026,19 @@ export default function Admin() {
                 </ul>
               </div>
 
-              <div className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
-                <h2 className="font-serif text-xl text-[#4A1F1F]">Accesorios</h2>
+              <div className="rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm">
+                <h2 className="font-serif text-xl text-[#1A1418]">Accesorios</h2>
                 <div className="mt-3 flex gap-2">
                   <input
                     value={newAccessoryNameTab}
                     onChange={(event) => setNewAccessoryNameTab(event.target.value)}
                     placeholder="Nuevo accesorio"
-                    className="w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                   />
                   <button
                     type="button"
                     onClick={handleCreateAccessoryTab}
-                    className="rounded-lg border border-[#4A1F1F] px-3 py-2 text-xs font-semibold text-[#4A1F1F]"
+                    className="rounded-lg border border-[#1A1418] px-3 py-2 text-xs font-semibold text-[#1A1418]"
                   >
                     Crear
                   </button>
@@ -1833,13 +2047,13 @@ export default function Admin() {
                   value={accessorySearchQuery}
                   onChange={(event) => setAccessorySearchQuery(event.target.value)}
                   placeholder="Buscar accesorio..."
-                  className="mt-3 w-full rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                  className="mt-3 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                 />
                 <ul className="mt-4 space-y-2">
                   {filteredAccessories.map((accessory) => (
                     <li
                       key={accessory.id}
-                      className="flex items-center justify-between gap-2 rounded-lg border border-[#EFE1DB] px-3 py-2"
+                      className="flex items-center justify-between gap-2 rounded-lg border border-[#1A1418]/10 px-3 py-2"
                     >
                       {editingAccessory?.id === accessory.id ? (
                         <input
@@ -1847,10 +2061,10 @@ export default function Admin() {
                           onChange={(event) =>
                             setEditingAccessory({ id: accessory.id, name: event.target.value })
                           }
-                          className="w-full rounded-lg border border-[#D6B8AE] px-2 py-1 text-sm"
+                          className="w-full rounded-lg border border-[#1A1418]/20 px-2 py-1 text-sm"
                         />
                       ) : (
-                        <span className="text-sm text-[#4A1F1F]">{accessory.name}</span>
+                        <span className="text-sm text-[#1A1418]">{accessory.name}</span>
                       )}
                       <div className="flex shrink-0 items-center gap-1">
                         <UsageTooltip costumeNames={accessoryUsage.get(accessory.id) ?? []} />
@@ -1864,7 +2078,7 @@ export default function Admin() {
                         ) : (
                           <button
                             onClick={() => setEditingAccessory({ id: accessory.id, name: accessory.name })}
-                            className="rounded border border-[#4A1F1F] px-2 py-1 text-xs text-[#4A1F1F]"
+                            className="rounded border border-[#1A1418] px-2 py-1 text-xs text-[#1A1418]"
                           >
                             Editar
                           </button>
@@ -1884,15 +2098,15 @@ export default function Admin() {
           ) : null}
 
           {activeSection === 'insights' ? (
-            <Suspense fallback={<p className="text-sm text-[#6E4B4B]">Cargando Insights...</p>}>
+            <Suspense fallback={<p className="text-sm text-[#5C5257]">Cargando Insights...</p>}>
               <InsightsSection onNavigateToCostume={handleNavigateToCostumeFromInsights} />
             </Suspense>
           ) : null}
 
           {activeSection === 'configuracion' ? (
-            <section className="rounded-2xl border border-[#E6D0C9] bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-serif text-2xl text-[#4A1F1F]">Configuracion del sitio</h2>
+                <h2 className="font-serif text-2xl text-[#1A1418]">Configuracion del sitio</h2>
                 <button
                   type="button"
                   onClick={handleSaveSiteConfig}
@@ -1905,99 +2119,99 @@ export default function Admin() {
 
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-[#4A1F1F]">Estadisticas</h3>
-                  <label className="block text-sm text-[#4A1F1F]">
+                  <h3 className="text-sm font-semibold text-[#1A1418]">Estadisticas</h3>
+                  <label className="block text-sm text-[#1A1418]">
                     Anos de tradicion
                     <input
                       value={siteStats.years_of_tradition}
                       onChange={(event) =>
                         setSiteStats((prev) => ({ ...prev, years_of_tradition: event.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                      className="mt-1 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2"
                     />
                   </label>
-                  <label className="block text-sm text-[#4A1F1F]">
+                  <label className="block text-sm text-[#1A1418]">
                     Carnavales vividos
                     <input
                       value={siteStats.carnivals_lived}
                       onChange={(event) =>
                         setSiteStats((prev) => ({ ...prev, carnivals_lived: event.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                      className="mt-1 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2"
                     />
                   </label>
-                  <label className="block text-sm text-[#4A1F1F]">
+                  <label className="block text-sm text-[#1A1418]">
                     Disfraces alquilados
                     <input
                       value={siteStats.costumes_rented}
                       onChange={(event) =>
                         setSiteStats((prev) => ({ ...prev, costumes_rented: event.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                      className="mt-1 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2"
                     />
                   </label>
-                  <label className="block text-sm text-[#4A1F1F]">
+                  <label className="block text-sm text-[#1A1418]">
                     Corazones felices
                     <input
                       value={siteStats.happy_hearts}
                       onChange={(event) =>
                         setSiteStats((prev) => ({ ...prev, happy_hearts: event.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                      className="mt-1 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2"
                     />
                   </label>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-[#4A1F1F]">Contacto</h3>
-                  <label className="block text-sm text-[#4A1F1F]">
+                  <h3 className="text-sm font-semibold text-[#1A1418]">Contacto</h3>
+                  <label className="block text-sm text-[#1A1418]">
                     Direccion interna
                     <input
                       value={contactInfo.address}
                       onChange={(event) =>
                         setContactInfo((prev) => ({ ...prev, address: event.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                      className="mt-1 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2"
                     />
                   </label>
-                  <label className="block text-sm text-[#4A1F1F]">
+                  <label className="block text-sm text-[#1A1418]">
                     Ciudad
                     <input
                       value={contactInfo.city}
                       onChange={(event) =>
                         setContactInfo((prev) => ({ ...prev, city: event.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                      className="mt-1 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2"
                     />
                   </label>
-                  <label className="block text-sm text-[#4A1F1F]">
+                  <label className="block text-sm text-[#1A1418]">
                     Telefono
                     <input
                       value={contactInfo.phone}
                       onChange={(event) =>
                         setContactInfo((prev) => ({ ...prev, phone: event.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                      className="mt-1 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2"
                     />
                   </label>
-                  <label className="block text-sm text-[#4A1F1F]">
+                  <label className="block text-sm text-[#1A1418]">
                     WhatsApp
                     <input
                       value={contactInfo.whatsapp}
                       onChange={(event) =>
                         setContactInfo((prev) => ({ ...prev, whatsapp: event.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                      className="mt-1 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2"
                     />
                   </label>
-                  <label className="block text-sm text-[#4A1F1F]">
+                  <label className="block text-sm text-[#1A1418]">
                     Email
                     <input
                       value={contactInfo.email}
                       onChange={(event) =>
                         setContactInfo((prev) => ({ ...prev, email: event.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-[#D6B8AE] px-3 py-2"
+                      className="mt-1 w-full rounded-lg border border-[#1A1418]/20 px-3 py-2"
                     />
                   </label>
                 </div>
@@ -2005,11 +2219,11 @@ export default function Admin() {
 
               <div className="mt-6">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-[#4A1F1F]">Horarios de atencion</h3>
+                  <h3 className="text-sm font-semibold text-[#1A1418]">Horarios de atencion</h3>
                   <button
                     type="button"
                     onClick={handleAddWorkingHour}
-                    className="rounded-lg border border-[#4A1F1F] px-3 py-1 text-xs font-semibold text-[#4A1F1F]"
+                    className="rounded-lg border border-[#1A1418] px-3 py-1 text-xs font-semibold text-[#1A1418]"
                   >
                     Agregar horario
                   </button>
@@ -2021,13 +2235,13 @@ export default function Admin() {
                         value={row.days}
                         onChange={(event) => handleWorkingHourField(index, 'days', event.target.value)}
                         placeholder="Dias"
-                        className="rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                        className="rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                       />
                       <input
                         value={row.hours}
                         onChange={(event) => handleWorkingHourField(index, 'hours', event.target.value)}
                         placeholder="Horario"
-                        className="rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                        className="rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                       />
                       <button
                         type="button"
@@ -2042,15 +2256,15 @@ export default function Admin() {
               </div>
 
               <div className="mt-6">
-                <h3 className="text-sm font-semibold text-[#4A1F1F]">Assets institucionales</h3>
+                <h3 className="text-sm font-semibold text-[#1A1418]">Assets institucionales</h3>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <input
                     value={newAssetKey}
                     onChange={(event) => setNewAssetKey(event.target.value)}
-                    className="w-48 rounded-lg border border-[#D6B8AE] px-3 py-2 text-sm"
+                    className="w-48 rounded-lg border border-[#1A1418]/20 px-3 py-2 text-sm"
                     placeholder="key del asset"
                   />
-                  <label className="rounded-lg bg-[#4A1F1F] px-3 py-2 text-xs font-semibold text-white">
+                  <label className="rounded-lg bg-[#1A1418] px-3 py-2 text-xs font-semibold text-white">
                     {isUploadingSiteAsset ? 'Subiendo...' : 'Subir asset'}
                     <input
                       type="file"
@@ -2064,8 +2278,8 @@ export default function Admin() {
 
                 <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {siteAssets.map((asset) => (
-                    <article key={asset.key} className="rounded-xl border border-[#E6D0C9] p-3">
-                      <p className="text-xs font-semibold text-[#4A1F1F]">{asset.key}</p>
+                    <article key={asset.key} className="rounded-xl border border-[#1A1418]/10 p-3">
+                      <p className="text-xs font-semibold text-[#1A1418]">{asset.key}</p>
                       <img
                         src={getSiteAssetUrl(asset.storage_path)}
                         alt={asset.key}
@@ -2079,6 +2293,8 @@ export default function Admin() {
           ) : null}
         </div>
       ) : null}
+        </div>
+      </div>
     </section>
   );
 }
