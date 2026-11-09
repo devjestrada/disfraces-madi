@@ -28,6 +28,7 @@ Configura estas variables antes de iniciar la app o desplegar funciones.
 
 - `SUPABASE_SERVICE_ROLE_KEY`: llave con privilegios elevados para operaciones administrativas.
 - `SUPABASE_DB_PASSWORD`: solo si automatizas operaciones CLI que la necesiten.
+- `OPENAI_API_KEY`: clave de la API de OpenAI para el flujo "Nuevo disfraz desde foto". Va **solo** como secreto de las Edge Functions (sección 8), nunca en `.env` del frontend.
 
 ## 4. Orden de migraciones SQL
 
@@ -45,6 +46,8 @@ Ejecuta en este orden exacto:
 10. `supabase/010_rental_history.sql`
 11. `supabase/011_child_sizes_and_optional_rental.sql`
 12. `supabase/012_gallery_alt_text.sql`
+13. `supabase/013_whatsapp_click_sources.sql`
+14. `supabase/014_ai_usage_log.sql`
 
 ## Opcion A: SQL Editor (Dashboard)
 
@@ -115,12 +118,85 @@ Lectura publica se mantiene segun politicas ya existentes en `004_rls.sql`.
 
 ## 8. Edge Functions y secrets
 
-Para cualquier funcion que requiera `service_role`, configura secrets en Supabase:
+El proyecto tiene dos Edge Functions para el flujo **"Nuevo disfraz desde foto"** del panel
+(spec `crear_disfraz_desde_foto`). Ambas exigen una sesión de admin (`public.is_admin()`) y llaman a OpenAI
+desde el servidor, así que la clave nunca llega al navegador.
 
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+| Función | Qué hace | Límite por admin |
+|---|---|---|
+| `edit-costume-photo` | Edita la foto con el prompt de catálogo (fondo de estudio, 3:4). | 20 por hora |
+| `extract-costume-data` | Convierte la descripción dictada o escrita en datos del formulario. | 60 por hora |
 
-Nunca expongas `SUPABASE_SERVICE_ROLE_KEY` en frontend.
+El código está en `supabase/functions/` (prompts compartidos en `_shared/prompts.ts`, alineados con `docs/prompts/`).
+El uso queda registrado en la tabla `ai_usage_log` (migración `014`).
+
+### 8.1 Requisitos
+
+1. Migración `supabase/014_ai_usage_log.sql` aplicada.
+2. Una clave de la **API de OpenAI** con facturación activa (platform.openai.com). La suscripción de ChatGPT no sirve.
+   Recomendado: fijar un límite de gasto mensual en la cuenta de OpenAI.
+3. Supabase CLI instalada (`npm i -g supabase` o `brew install supabase/tap/supabase`) y sesión iniciada (`supabase login`).
+
+### 8.2 Secretos
+
+Son cuatro secretos. Solo `OPENAI_API_KEY` y `OPENAI_TEXT_MODEL` son obligatorios:
+
+| Nombre | Valor |
+|---|---|
+| `OPENAI_API_KEY` | Clave de la API de OpenAI (`sk-...`). |
+| `OPENAI_TEXT_MODEL` | ID exacto de un modelo de texto actual, pequeño y económico, que soporte Structured Outputs en la API de Responses. Recomendado a nov. 2026: `gpt-6-luna` (si extrae mal descripciones complejas, `gpt-6.1-sol`). Verificar en la documentación de Models de platform.openai.com. |
+| `OPENAI_IMAGE_MODEL` | Opcional. Por defecto `gpt-image-2`. |
+| `OPENAI_IMAGE_QUALITY` | Opcional. `low`, `medium` o `high`; por defecto `medium` (mejor equilibrio costo/resultado). |
+
+No crees secretos que empiecen por `SUPABASE_`: ese prefijo está reservado. `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+y `SUPABASE_SERVICE_ROLE_KEY` los inyecta Supabase automáticamente.
+
+**Opción A — Dashboard (sin instalar nada)**
+
+1. En supabase.com, abre el proyecto y ve a **Edge Functions → Secrets**.
+2. Agrega cada secreto (Key y Value). Se pueden pegar varios a la vez.
+3. Presiona **Save**.
+
+**Opción B — CLI**
+
+1. Instala la CLI (`brew install supabase/tap/supabase` o `npm i -g supabase`) e inicia sesión con `supabase login`.
+2. El `<project-ref>` es el subdominio de `VITE_SUPABASE_URL` (`https://<project-ref>.supabase.co`).
+3. Guarda los secretos en un archivo **fuera del repositorio** (para que la clave no quede en el historial
+   de la terminal ni en git), por ejemplo `~/openai-madi.env`:
+   ```
+   OPENAI_API_KEY=sk-...
+   OPENAI_TEXT_MODEL=gpt-6-luna
+   OPENAI_IMAGE_MODEL=gpt-image-2
+   OPENAI_IMAGE_QUALITY=medium
+   ```
+4. Súbelos y verifica (el listado muestra nombres, no valores):
+   ```bash
+   supabase secrets set --env-file ~/openai-madi.env --project-ref <project-ref>
+   supabase secrets list --project-ref <project-ref>
+   ```
+5. Borra el archivo `~/openai-madi.env`.
+
+### 8.3 Despliegue
+
+Desde la raíz del proyecto:
+
+```bash
+supabase functions deploy edit-costume-photo --project-ref <project-ref>
+supabase functions deploy extract-costume-data --project-ref <project-ref>
+```
+
+Orden recomendado: migración `014` → secretos → funciones → frontend.
+
+### 8.4 Verificación
+
+- En el panel (desde el celular), **Disfraces → Desde foto**: toma o elige una foto, espera la edición y prellena con una descripción.
+- Consumo:
+  ```sql
+  select kind, model, count(*), max(created_at) from ai_usage_log group by kind, model;
+  ```
+- Errores: logs de cada función en Dashboard → Edge Functions.
+
+Nunca expongas `SUPABASE_SERVICE_ROLE_KEY` ni `OPENAI_API_KEY` en el frontend.
 
 ## 9. Pasos de verificacion
 

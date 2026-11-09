@@ -1,5 +1,22 @@
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-09
+
+### Added
+- Flujo **"Nuevo disfraz desde foto"** en el panel (botón "Desde foto" en Resumen y Disfraces), pensado para el celular: tomar la foto o elegirla de la galería, edición con IA (OpenAI) con el prompt de catálogo, foto final 3:4 de 800 × 1067 px, hasta 3 regeneraciones, y prellenado del formulario desde la descripción dictada o escrita.
+- Borrador en el formulario con la foto editada, texto alternativo sugerido, campos llenados por la IA resaltados, telas y accesorios nuevos con opción de crearlos, y notas de la descripción. Al guardar se crean el disfraz, su ficha técnica y la foto principal; si algo falla, se puede reintentar sin duplicar el disfraz.
+- Edge Functions `edit-costume-photo` y `extract-costume-data` (primeras del proyecto): solo para admins, con la clave de OpenAI como secreto, salida estructurada (JSON Schema) y límites por hora (20 ediciones, 60 extracciones).
+- Migración `014_ai_usage_log.sql`: registro de uso de IA por admin.
+- Documentación de secretos, despliegue y verificación en `docs/SUPABASE_SETUP.md` §8.
+
+### Changed
+- La ficha técnica se muestra también para un disfraz nuevo cuando viene de "Desde foto", para revisar lo sugerido antes de guardar.
+- `tsconfig.json` excluye `supabase/functions` (código Deno, verificado con `deno check`).
+
+### Fixed
+- `.env.example` usaba `//` para un comentario, sintaxis que la CLI de Supabase no acepta al desplegar funciones; ahora usa `#`.
+- El panel ya no vuelve a "Validando permisos admin…" cuando Supabase refresca la sesión del mismo usuario (por ejemplo, al volver de la cámara del celular), lo que desmontaba la pantalla y hacía perder el trabajo en curso.
+
 ## [0.13.0] - 2026-11-09
 
 ### Added

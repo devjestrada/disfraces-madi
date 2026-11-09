@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Plus } from 'lucide-react';
+import { Camera, ChevronRight, Plus } from 'lucide-react';
 import PeriodSelector from '../../components/admin/insights/PeriodSelector';
 import KpiCard from '../../components/admin/insights/KpiCard';
 import TopRankingCard, { type RankingRow } from '../../components/admin/insights/TopRankingCard';
@@ -20,6 +20,7 @@ import type { AdminCostume, AdminRentalHistoryRow, DateRange, InsightsPeriodPres
 interface ResumenSectionProps {
   costumes: AdminCostume[];
   onCreateNew: () => void;
+  onCreateFromPhoto: () => void;
   onOpenCostume: (costumeId: string) => void;
   onGoToInsights: () => void;
   onGoToCostumes: () => void;
@@ -37,6 +38,7 @@ interface PendingItem {
 export default function ResumenSection({
   costumes,
   onCreateNew,
+  onCreateFromPhoto,
   onOpenCostume,
   onGoToInsights,
   onGoToCostumes,
@@ -216,6 +218,15 @@ export default function ResumenSection({
           <h2 className="font-serif text-4xl font-bold leading-[1.2] text-[#1A1418]">Resumen</h2>
           <p className="mt-1 text-sm leading-[1.6] text-[#5C5257]">Cómo va el catálogo y qué tienes pendiente.</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onCreateFromPhoto}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#A8001A] bg-white px-5 text-[15px] font-medium text-[#A8001A]"
+        >
+          <Camera size={20} strokeWidth={1.75} aria-hidden="true" />
+          Desde foto
+        </button>
         <button
           type="button"
           onClick={onCreateNew}
@@ -224,6 +235,7 @@ export default function ResumenSection({
           <Plus size={20} strokeWidth={1.75} aria-hidden="true" />
           Nuevo disfraz
         </button>
+        </div>
       </div>
 
       <PeriodSelector

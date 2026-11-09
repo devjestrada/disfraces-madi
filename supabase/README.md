@@ -17,10 +17,11 @@ Este directorio contiene las migraciones SQL versionadas del proyecto.
 - `011_child_sizes_and_optional_rental.sql`: tallas infantiles (`4`–`16`) en `costume_size_enum` y precio de alquiler opcional.
 - `012_gallery_alt_text.sql`: expone el texto alternativo de cada imagen en `costumes_full.gallery`.
 - `013_whatsapp_click_sources.sql`: `costume_events.costume_id` opcional y columna `source` con el origen de cada clic a WhatsApp; los clics previos se marcan como `costume_detail`.
+- `014_ai_usage_log.sql`: tabla `ai_usage_log` con el uso de IA por admin (límites por hora y control de costos del flujo "Nuevo disfraz desde foto").
 
 ## Orden de ejecución
 
-Ejecuta las migraciones en orden numérico, sin saltos: `001` -> `013`.
+Ejecuta las migraciones en orden numérico, sin saltos: `001` -> `014`.
 
 ## Guía completa obligatoria
 
@@ -29,3 +30,7 @@ Para configuración paso a paso (Dashboard, Auth, buckets, políticas, variables
 - `docs/SUPABASE_SETUP.md`
 
 Ese documento es la fuente principal para onboarding de entornos nuevos.
+
+## Edge Functions
+
+`functions/` contiene `edit-costume-photo` y `extract-costume-data` (flujo "Nuevo disfraz desde foto"). Secretos, despliegue y verificación: `docs/SUPABASE_SETUP.md` §8.
