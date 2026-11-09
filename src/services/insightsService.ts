@@ -69,39 +69,160 @@ export function filterRentalHistoryByRange(
 }
 
 export interface CostumeEventRow {
-  costume_id: string;
+  /** Nulo en clics a WhatsApp que no son de un disfraz (p. ej. botón flotante fuera de una ficha). */
+  costume_id: string | null;
   occurred_at: string;
+  /** Origen del clic a WhatsApp (migración 013). Nulo en visitas. */
+  source: string | null;
 }
 
-/** Fetches raw event rows once; aggregation/period filtering happens client-side (see aggregateEventCounts). */
-export async function fetchCostumeEvents(eventType: 'view' | 'whatsapp_click'): Promise<CostumeEventRow[]> {
-  const { data, error } = await supabaseAdmin
-    .from('costume_events')
-    .select('costume_id, occurred_at')
-    .eq('event_type', eventType);
+const EVENTS_PAGE_SIZE = 1000;
 
+function isMissingSourceColumn(error: { code?: string; message?: string }) {
+  return error.code === '42703' || /source/i.test(error.message ?? '');
+}
+
+/**
+ * Trae todas las filas del tipo de evento, paginando de a 1.000 (límite por defecto de PostgREST),
+ * para que los rankings no se queden cortos con mucho volumen. El filtrado por periodo es client-side
+ * (ver aggregateEventCounts) para que cambiar de periodo sea instantáneo.
+ */
+export async function fetchCostumeEvents(eventType: 'view' | 'whatsapp_click'): Promise<CostumeEventRow[]> {
+  const fetchPage = (columns: string, from: number) =>
+    supabaseAdmin
+      .from('costume_events')
+      .select(columns)
+      .eq('event_type', eventType)
+      .order('occurred_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, from + EVENTS_PAGE_SIZE - 1);
+
+  // Compatibilidad: si la migración 013 aún no se aplicó, la columna `source` no existe.
+  let columns = 'costume_id, occurred_at, source';
+  const rows: CostumeEventRow[] = [];
+
+  for (let from = 0; ; from += EVENTS_PAGE_SIZE) {
+    let { data, error } = await fetchPage(columns, from);
+    if (error && from === 0 && isMissingSourceColumn(error)) {
+      columns = 'costume_id, occurred_at';
+      ({ data, error } = await fetchPage(columns, from));
+    }
+    if (error) {
+      throw new Error(error.message);
+    }
+    const page = (data ?? []) as unknown as Array<Partial<CostumeEventRow>>;
+    page.forEach((row) =>
+      rows.push({
+        costume_id: row.costume_id ?? null,
+        occurred_at: row.occurred_at as string,
+        source: row.source ?? null,
+      })
+    );
+    if (page.length < EVENTS_PAGE_SIZE) {
+      break;
+    }
+  }
+
+  return rows;
+}
+
+/** Conteo exacto en el servidor (sin descargar filas) de un tipo de evento en un periodo. */
+export async function countEvents(eventType: 'view' | 'whatsapp_click', range: DateRange): Promise<number> {
+  let query = supabaseAdmin
+    .from('costume_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_type', eventType);
+  if (range.from) {
+    query = query.gte('occurred_at', range.from.toISOString());
+  }
+  if (range.to) {
+    query = query.lte('occurred_at', range.to.toISOString());
+  }
+  const { count, error } = await query;
   if (error) {
     throw new Error(error.message);
   }
+  return count ?? 0;
+}
 
-  return (data ?? []) as CostumeEventRow[];
+function isWithinEventRange(occurredAt: string, range: DateRange) {
+  const time = new Date(occurredAt).getTime();
+  if (range.from && time < range.from.getTime()) {
+    return false;
+  }
+  if (range.to && time > range.to.getTime()) {
+    return false;
+  }
+  return true;
 }
 
 export function aggregateEventCounts(rows: CostumeEventRow[], range: DateRange): CostumeEventCount[] {
   const counts = new Map<string, number>();
 
   rows.forEach((row) => {
-    const time = new Date(row.occurred_at).getTime();
-    if (range.from && time < range.from.getTime()) {
-      return;
-    }
-    if (range.to && time > range.to.getTime()) {
+    if (!row.costume_id || !isWithinEventRange(row.occurred_at, range)) {
       return;
     }
     counts.set(row.costume_id, (counts.get(row.costume_id) ?? 0) + 1);
   });
 
   return Array.from(counts.entries()).map(([costume_id, count]) => ({ costume_id, count }));
+}
+
+/** Nombres legibles de cada origen de clic a WhatsApp (ver migración 013). */
+export const WHATSAPP_SOURCE_LABELS: Record<string, string> = {
+  floating_button: 'Botón flotante',
+  costume_detail: 'Ficha de disfraz',
+  catalog: 'Catálogo',
+  home_hero: 'Inicio · portada',
+  home_footer_cta: 'Inicio · llamado final',
+  services_card: 'Servicios · tarjeta',
+  services_cta: 'Servicios · llamado final',
+  contact: 'Contacto · agendar cita',
+  contact_direct: 'Contacto · número directo',
+  footer: 'Pie de página',
+};
+
+export interface WhatsAppSourceCount {
+  source: string;
+  label: string;
+  count: number;
+}
+
+export function aggregateClicksBySource(rows: CostumeEventRow[], range: DateRange): WhatsAppSourceCount[] {
+  const counts = new Map<string, number>();
+  rows.forEach((row) => {
+    if (!isWithinEventRange(row.occurred_at, range)) {
+      return;
+    }
+    const key = row.source ?? 'sin_origen';
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  });
+  return Array.from(counts.entries())
+    .map(([source, count]) => ({
+      source,
+      label: WHATSAPP_SOURCE_LABELS[source] ?? 'Sin origen registrado',
+      count,
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Fecha desde la que se miden todos los CTA de WhatsApp: el primer clic registrado desde un origen
+ * distinto a la ficha de disfraz (antes de la migración 013 solo se medía ese botón).
+ * Devuelve null si todavía no hay clics de otros orígenes.
+ */
+export function getFullClickTrackingSince(rows: CostumeEventRow[]): Date | null {
+  let earliest: number | null = null;
+  rows.forEach((row) => {
+    if (row.source && row.source !== 'costume_detail') {
+      const time = new Date(row.occurred_at).getTime();
+      if (earliest === null || time < earliest) {
+        earliest = time;
+      }
+    }
+  });
+  return earliest === null ? null : new Date(earliest);
 }
 
 export interface RentalRankingEntry {

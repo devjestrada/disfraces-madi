@@ -2,6 +2,7 @@ import React from 'react';
 import { Scissors, ShoppingBag, Clock3, Sparkles, Calendar, CheckCircle } from 'lucide-react';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
+import { trackWhatsAppClick } from '../services/trackingService';
 import { useDocumentMeta } from '../hooks/useSeo';
 
 export default function Servicios() {
@@ -130,6 +131,7 @@ export default function Servicios() {
                   href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent(`Hola Sra. Madi, me gustaría consultar tarifas y disponibilidad para el servicio de: "${service.title}".`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackWhatsAppClick({ source: 'services_card' })}
                   className="bg-[#25d366]/10 hover:bg-[#25d366]/20 text-[#128c7e] text-xs font-bold px-3 py-1.5 rounded-lg font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <WhatsAppIcon className="h-3.5 w-3.5 text-current" />
@@ -186,6 +188,7 @@ export default function Servicios() {
               href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial en la boutique.')}`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackWhatsAppClick({ source: 'services_cta' })}
               className="px-8 py-3.5 bg-[#25d366] hover:bg-[#20ba5a] text-white font-bold text-sm tracking-wider uppercase rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer inline-flex items-center space-x-2.5"
             >
               <WhatsAppIcon className="h-5 w-5 text-white" />

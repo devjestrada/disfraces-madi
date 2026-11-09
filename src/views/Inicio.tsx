@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { ASSETS } from '../data';
 import { usePublicData } from '../context/PublicDataContext';
+import { trackWhatsAppClick } from '../services/trackingService';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import type { Costume, CostumeCategory } from '../types';
 import useCostumes from '../hooks/useCostumes';
@@ -174,6 +175,7 @@ export default function Inicio() {
               href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial en la boutique.')}`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackWhatsAppClick({ source: 'home_hero' })}
               className="w-full sm:w-auto flex items-center justify-center space-x-2.5 px-8 py-4 bg-[#25d366] hover:bg-[#20ba5a] text-white font-semibold rounded-full shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
             >
               <WhatsAppIcon className="h-5 w-5 text-white" />
@@ -404,6 +406,7 @@ export default function Inicio() {
               href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial en la boutique.')}`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackWhatsAppClick({ source: 'home_footer_cta' })}
               className="w-full sm:w-auto px-8 py-3.5 bg-[#25d366] hover:bg-[#20ba5a] text-white font-bold rounded-full text-sm shadow-lg tracking-wider uppercase transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center space-x-2.5"
             >
               <WhatsAppIcon className="h-5 w-5 text-white" />

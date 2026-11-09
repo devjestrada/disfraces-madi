@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CatalogCategory, Costume } from '../types';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
+import { trackWhatsAppClick } from '../services/trackingService';
 import { formatCOP } from '../utils/format';
 import { useDocumentMeta, useStructuredData } from '../hooks/useSeo';
 import { buildBreadcrumbLd } from '../utils/structuredData';
@@ -324,6 +325,7 @@ export default function Catalogo({ costumes }: CatalogoProps) {
                 href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, vi el catálogo y me gustaría solicitar disponibilidad para agendar una cita de fitting presencial.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackWhatsAppClick({ source: 'catalog' })}
                 className="bg-[#25d366] hover:bg-[#20ba5a] text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-sm"
               >
                 <WhatsAppIcon className="h-4 w-4 text-white" />

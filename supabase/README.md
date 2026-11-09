@@ -14,10 +14,13 @@ Este directorio contiene las migraciones SQL versionadas del proyecto.
 - `008_deposit_price.sql`: columna `deposit_price` en `costumes` y actualización de la vista `costumes_full`.
 - `009_costume_events.sql`: tabla `costume_events` (tracking anónimo interno de vistas de ficha y clics de WhatsApp), con INSERT abierto a `anon` y SELECT restringido a admin.
 - `010_rental_history.sql`: tablas `costume_rental_history` (histórico de alquileres importado del CSV digitalizado) y `costume_label_aliases` (vinculación reutilizable de etiquetas), ambas admin-only.
+- `011_child_sizes_and_optional_rental.sql`: tallas infantiles (`4`–`16`) en `costume_size_enum` y precio de alquiler opcional.
+- `012_gallery_alt_text.sql`: expone el texto alternativo de cada imagen en `costumes_full.gallery`.
+- `013_whatsapp_click_sources.sql`: `costume_events.costume_id` opcional y columna `source` con el origen de cada clic a WhatsApp; los clics previos se marcan como `costume_detail`.
 
 ## Orden de ejecución
 
-Ejecuta las migraciones en orden numérico, sin saltos: `001` -> `010`.
+Ejecuta las migraciones en orden numérico, sin saltos: `001` -> `013`.
 
 ## Guía completa obligatoria
 

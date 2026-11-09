@@ -340,7 +340,7 @@ export default function CatalogoDetail({ costumeProp, isLoading }: CatalogoDetai
             <div className="grid grid-cols-1 gap-4 border-t border-[#a8001a]/10 pt-6" id="detail-action-buttons">
               <button
                 onClick={() => {
-                  trackWhatsAppClick(costume.id);
+                  trackWhatsAppClick({ source: 'costume_detail', costumeId: costume.id });
                   const text = `Hola Sra. Madi, me gustaría solicitar disponibilidad para agendar una cita de fitting presencial para probarme el disfraz "${costume.name}" en talla ${displaySize}.`;
                   window.open(`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent(text)}`, '_blank');
                 }}
