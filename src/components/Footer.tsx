@@ -2,6 +2,7 @@ import React from 'react';
 import { Mail, Phone, MapPin, Clock, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePublicData } from '../context/PublicDataContext';
+import { trackWhatsAppClick } from '../services/trackingService';
 import logoDisfracesMadi from '../assets/images/logo_disfraces_madi.png';
 
 export default function Footer() {
@@ -98,7 +99,7 @@ export default function Footer() {
             <ul className="space-y-3.5 text-sm text-[#fff8f5]/80">
               <li className="flex items-center space-x-2.5">
                 <Phone className="h-4 w-4 text-[#fdc003]" />
-                <a href={`https://wa.me/${contactInfo.whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#fdc003] transition-colors font-semibold">
+                <a href={`https://wa.me/${contactInfo.whatsapp}`} target="_blank" rel="noopener noreferrer" onClick={() => trackWhatsAppClick({ source: 'footer' })} className="hover:text-[#fdc003] transition-colors font-semibold">
                   WhatsApp: {contactInfo.phone}
                 </a>
               </li>

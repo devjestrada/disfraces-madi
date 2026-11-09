@@ -5,7 +5,9 @@ import KpiCard from '../../components/admin/insights/KpiCard';
 import TopRankingCard, { type RankingRow } from '../../components/admin/insights/TopRankingCard';
 import {
   aggregateEventCounts,
+  countEvents,
   fetchCostumeEvents,
+  getFullClickTrackingSince,
   fetchRentalHistory,
   filterRentalHistoryByRange,
   rankRentalsByCostume,
@@ -47,6 +49,7 @@ export default function ResumenSection({
   const [viewEvents, setViewEvents] = useState<CostumeEventRow[]>([]);
   const [whatsappEvents, setWhatsappEvents] = useState<CostumeEventRow[]>([]);
   const [imageHealth, setImageHealth] = useState<CatalogImageHealth | null>(null);
+  const [eventTotals, setEventTotals] = useState({ viewsNow: 0, viewsPrev: 0, clicksNow: 0, clicksPrev: 0 });
 
   useEffect(() => {
     let isMounted = true;
@@ -86,18 +89,42 @@ export default function ResumenSection({
   const activeRange = useMemo(() => getPeriodRange(period, customRange), [period, customRange]);
   const previousRange = useMemo(() => getPreviousEquivalentRange(period, activeRange), [period, activeRange]);
 
-  const countEvents = (rows: CostumeEventRow[], range: DateRange | null) =>
-    range ? aggregateEventCounts(rows, range).reduce((sum, entry) => sum + entry.count, 0) : 0;
+  // Totales de visitas y clics: conteo exacto en Supabase (no depende de cuántas filas se descarguen).
+  useEffect(() => {
+    let isMounted = true;
+    const loadTotals = async () => {
+      try {
+        const [viewsNow, viewsPrev, clicksNow, clicksPrev] = await Promise.all([
+          countEvents('view', activeRange),
+          previousRange ? countEvents('view', previousRange) : Promise.resolve(0),
+          countEvents('whatsapp_click', activeRange),
+          previousRange ? countEvents('whatsapp_click', previousRange) : Promise.resolve(0),
+        ]);
+        if (isMounted) {
+          setEventTotals({ viewsNow, viewsPrev, clicksNow, clicksPrev });
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
+      }
+    };
+    loadTotals();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeRange, previousRange]);
 
   const rentalsInRange = useMemo(
     () => filterRentalHistoryByRange(rentalHistory, activeRange),
     [rentalHistory, activeRange]
   );
   const rentalsPrev = previousRange ? filterRentalHistoryByRange(rentalHistory, previousRange).length : 0;
-  const viewsNow = countEvents(viewEvents, activeRange);
-  const viewsPrev = countEvents(viewEvents, previousRange);
-  const clicksNow = countEvents(whatsappEvents, activeRange);
-  const clicksPrev = countEvents(whatsappEvents, previousRange);
+  const { viewsNow, viewsPrev, clicksNow, clicksPrev } = eventTotals;
+  const fullClickTrackingSince = useMemo(() => getFullClickTrackingSince(whatsappEvents), [whatsappEvents]);
+  const clicksNote = fullClickTrackingSince
+    ? `Medición completa desde el ${fullClickTrackingSince.toLocaleDateString('es-CO')}.`
+    : 'Hasta ahora solo se mide el botón de la ficha de disfraz.';
 
   const variation = (now: number, prev: number) => (previousRange ? percentChange(now, prev) : null);
 
@@ -237,6 +264,7 @@ export default function ResumenSection({
               source="Visitas al sitio"
               variation={variation(clicksNow, clicksPrev)}
               isEmpty={clicksNow === 0}
+              note={clicksNote}
             />
             <KpiCard
               label="Disfraces disponibles"

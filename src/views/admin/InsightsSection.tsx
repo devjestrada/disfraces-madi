@@ -19,6 +19,9 @@ import {
   rankRentalsByCostume,
   importRentalHistoryCsv,
   confirmLabelMatch,
+  countEvents,
+  aggregateClicksBySource,
+  getFullClickTrackingSince,
   type MatchableCostume,
 } from '../../services/insightsService';
 import type {
@@ -46,9 +49,11 @@ export default function InsightsSection({ onNavigateToCostume }: InsightsSection
   const [costumes, setCostumes] = useState<MatchableCostume[]>([]);
   const [allRentalHistory, setAllRentalHistory] = useState<AdminRentalHistoryRow[]>([]);
   const [allViewEvents, setAllViewEvents] = useState<CostumeEventRow[]>([]);
+  const [allClickEvents, setAllClickEvents] = useState<CostumeEventRow[]>([]);
+  const [clickTotals, setClickTotals] = useState({ now: 0, prev: 0 });
   const [aliases, setAliases] = useState<AdminCostumeLabelAlias[]>([]);
 
-  const [drawer, setDrawer] = useState<'alquilados' | 'visualizados' | null>(null);
+  const [drawer, setDrawer] = useState<'alquilados' | 'visualizados' | 'clics' | null>(null);
 
   const linkingRef = useRef<HTMLDivElement | null>(null);
 
@@ -59,15 +64,17 @@ export default function InsightsSection({ onNavigateToCostume }: InsightsSection
   const loadAll = async () => {
     setIsLoading(true);
     try {
-      const [costumesData, rentalData, viewEvents, aliasData] = await Promise.all([
+      const [costumesData, rentalData, viewEvents, clickEvents, aliasData] = await Promise.all([
         fetchCostumesForMatching(),
         fetchRentalHistory(),
         fetchCostumeEvents('view'),
+        fetchCostumeEvents('whatsapp_click'),
         fetchLabelAliases(),
       ]);
       setCostumes(costumesData);
       setAllRentalHistory(rentalData);
       setAllViewEvents(viewEvents);
+      setAllClickEvents(clickEvents);
       setAliases(aliasData);
     } catch (error) {
       notifyError(error);
@@ -156,6 +163,67 @@ export default function InsightsSection({ onNavigateToCostume }: InsightsSection
     previousCount: viewedRankingPrevByKey.get(entry.costume_id) ?? 0,
   }));
 
+  // Clics a WhatsApp: total exacto en el servidor; rankings y orígenes a partir de las filas paginadas.
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([
+      countEvents('whatsapp_click', activeRange),
+      previousRange ? countEvents('whatsapp_click', previousRange) : Promise.resolve(0),
+    ])
+      .then(([now, prev]) => {
+        if (isMounted) {
+          setClickTotals({ now, prev });
+        }
+      })
+      .catch((error) => {
+        if (isMounted) {
+          notifyError(error);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRange, previousRange]);
+
+  const clickVariation = previousRange ? percentChange(clickTotals.now, clickTotals.prev) : null;
+  const fullClickTrackingSince = useMemo(() => getFullClickTrackingSince(allClickEvents), [allClickEvents]);
+  const clicksNote = fullClickTrackingSince
+    ? `Medición completa desde el ${fullClickTrackingSince.toLocaleDateString('es-CO')}.`
+    : 'Hasta ahora solo se mide el botón de la ficha de disfraz.';
+
+  const clicksBySource = useMemo(
+    () => aggregateClicksBySource(allClickEvents, activeRange),
+    [allClickEvents, activeRange]
+  );
+  const maxSourceCount = clicksBySource[0]?.count ?? 0;
+
+  const clickedRankingCurrent = useMemo(
+    () => [...aggregateEventCounts(allClickEvents, activeRange)].sort((a, b) => b.count - a.count),
+    [allClickEvents, activeRange]
+  );
+  const clickedRankingPrevByKey = useMemo(
+    () =>
+      new Map(
+        (previousRange ? aggregateEventCounts(allClickEvents, previousRange) : []).map((entry) => [
+          entry.costume_id,
+          entry.count,
+        ])
+      ),
+    [allClickEvents, previousRange]
+  );
+  const clickedRankingRows: RankingRow[] = clickedRankingCurrent.map((entry) => ({
+    costumeId: entry.costume_id,
+    label: rankingLabel(entry.costume_id),
+    count: entry.count,
+  }));
+  const clickedDrawerRows: RankingDetailRow[] = clickedRankingCurrent.map((entry) => ({
+    costumeId: entry.costume_id,
+    label: rankingLabel(entry.costume_id),
+    count: entry.count,
+    previousCount: clickedRankingPrevByKey.get(entry.costume_id) ?? 0,
+  }));
+
   const unmatchedLabels = useMemo(() => {
     const set = new Set<string>();
     allRentalHistory.forEach((row) => {
@@ -216,6 +284,14 @@ export default function InsightsSection({ onNavigateToCostume }: InsightsSection
               variation={rentalVariation}
               isEmpty={totalRentals === 0}
             />
+            <KpiCard
+              label="Clics a WhatsApp en el periodo"
+              value={clickTotals.now}
+              source="Visitas al sitio"
+              variation={clickVariation}
+              isEmpty={clickTotals.now === 0}
+              note={clicksNote}
+            />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -233,6 +309,49 @@ export default function InsightsSection({ onNavigateToCostume }: InsightsSection
             />
           </div>
 
+          <div className="grid gap-4 lg:grid-cols-2">
+            <section
+              aria-labelledby="insights-clics-origen"
+              className="space-y-3 rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h3 id="insights-clics-origen" className="font-serif text-lg text-[#1A1418]">
+                  Clics a WhatsApp por origen
+                </h3>
+                <span className="text-[10px] uppercase tracking-wide text-[#5C5257]/70">Fuente: Visitas al sitio</span>
+              </div>
+              {clicksBySource.length === 0 ? (
+                <p className="text-sm text-[#5C5257]">
+                  Aún no hay movimiento registrado en este periodo. Prueba con otro rango de fechas.
+                </p>
+              ) : (
+                <ul className="space-y-2.5">
+                  {clicksBySource.map((entry) => (
+                    <li key={entry.source} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="truncate text-[#1A1418]">{entry.label}</span>
+                        <span className="font-mono font-semibold text-[#A8001A]">{entry.count}</span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#1A1418]/5">
+                        <div
+                          className="h-full rounded-full bg-[#A8001A]"
+                          style={{ width: `${maxSourceCount ? (entry.count / maxSourceCount) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="text-xs leading-[1.5] text-[#5C5257]">{clicksNote}</p>
+            </section>
+            <TopRankingCard
+              title="Disfraces con más clics a WhatsApp"
+              source="Visitas al sitio"
+              rows={clickedRankingRows}
+              onViewAll={() => setDrawer('clics')}
+            />
+          </div>
+
           <RentalHistoryTable rows={rentalRowsInRange} costumes={costumes} onRequestLink={scrollToLinking} />
 
           <CsvImportPanel onImport={handleImport} isImporting={isImporting} />
@@ -247,6 +366,13 @@ export default function InsightsSection({ onNavigateToCostume }: InsightsSection
         open={drawer === 'alquilados'}
         title="Top disfraces más alquilados — detalle completo"
         rows={rentedDrawerRows}
+        onClose={() => setDrawer(null)}
+        onNavigateToCostume={onNavigateToCostume}
+      />
+      <RankingDetailDrawer
+        open={drawer === 'clics'}
+        title="Disfraces con más clics a WhatsApp — detalle completo"
+        rows={clickedDrawerRows}
         onClose={() => setDrawer(null)}
         onNavigateToCostume={onNavigateToCostume}
       />

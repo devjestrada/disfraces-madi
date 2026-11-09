@@ -7,9 +7,11 @@ interface KpiCardProps {
   variation?: number | null;
   isEmpty?: boolean;
   emptyMessage?: string;
+  /** Aclaración opcional sobre cómo se mide el indicador. */
+  note?: string;
 }
 
-export default function KpiCard({ label, value, source, variation, isEmpty, emptyMessage }: KpiCardProps) {
+export default function KpiCard({ label, value, source, variation, isEmpty, emptyMessage, note }: KpiCardProps) {
   return (
     <div className="space-y-2 rounded-2xl border border-[#1A1418]/10 bg-white p-5 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-wide text-[#5C5257]">{label}</p>
@@ -29,6 +31,7 @@ export default function KpiCard({ label, value, source, variation, isEmpty, empt
         </>
       )}
 
+      {note ? <p className="text-xs leading-[1.5] text-[#5C5257]">{note}</p> : null}
       <p className="text-[10px] uppercase tracking-wide text-[#5C5257]/70">Fuente: {source}</p>
     </div>
   );

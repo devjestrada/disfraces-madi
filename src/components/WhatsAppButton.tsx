@@ -3,12 +3,15 @@ import { X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePublicData } from '../context/PublicDataContext';
 import WhatsAppIcon from './WhatsAppIcon';
+import { trackWhatsAppClick } from '../services/trackingService';
 
 interface WhatsAppButtonProps {
   selectedCostumeName?: string;
+  /** Disfraz abierto en la ficha, para atribuirle el clic en las métricas. */
+  selectedCostumeId?: string;
 }
 
-export default function WhatsAppButton({ selectedCostumeName }: WhatsAppButtonProps) {
+export default function WhatsAppButton({ selectedCostumeName, selectedCostumeId }: WhatsAppButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [customText, setCustomText] = useState('');
 
@@ -19,6 +22,7 @@ export default function WhatsAppButton({ selectedCostumeName }: WhatsAppButtonPr
   const { contactInfo } = usePublicData();
 
   const handleSendMessage = (messageText: string) => {
+    trackWhatsAppClick({ source: 'floating_button', costumeId: selectedCostumeId });
     const formattedText = encodeURIComponent(messageText);
     const whatsappUrl = `https://wa.me/${contactInfo.whatsapp}?text=${formattedText}`;
     window.open(whatsappUrl, '_blank');

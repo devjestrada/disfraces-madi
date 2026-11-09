@@ -2,6 +2,7 @@ import React from 'react';
 import { Mail, Clock, Sparkles } from 'lucide-react';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { usePublicData } from '../context/PublicDataContext';
+import { trackWhatsAppClick } from '../services/trackingService';
 import { useDocumentMeta } from '../hooks/useSeo';
 
 export default function Contacto() {
@@ -56,6 +57,7 @@ export default function Contacto() {
                 href={`https://wa.me/${contactInfo.whatsapp}?text=${encodeURIComponent('Hola Sra. Madi, me gustaría agendar una cita de fitting y conversar sobre un diseño personalizado para el Carnaval.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackWhatsAppClick({ source: 'contact' })}
                 className="w-full h-14 bg-[#25d366] hover:bg-[#20ba5a] text-white font-bold text-sm uppercase tracking-widest rounded-full shadow-lg flex items-center justify-center space-x-3 transition-all cursor-pointer transform hover:-translate-y-0.5 active:scale-95"
               >
                 <WhatsAppIcon className="h-6 w-6 text-white" />
@@ -68,6 +70,7 @@ export default function Contacto() {
                 href={`https://wa.me/${contactInfo.whatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackWhatsAppClick({ source: 'contact_direct' })}
                 className="flex items-start space-x-3 group cursor-pointer hover:text-[#fdc003] transition-colors"
               >
                 <WhatsAppIcon className="h-5 w-5 text-[#fdc003] shrink-0 mt-0.5" />

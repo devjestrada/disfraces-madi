@@ -2,6 +2,30 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const SESSION_ID_KEY = 'madi_session_id';
 const VIEW_DEDUP_WINDOW_MS = 30 * 60 * 1000;
+const CLICK_DEDUP_WINDOW_MS = 10 * 1000;
+
+/** Origen de un clic a WhatsApp. Debe coincidir con el check de la migración 013. */
+export type WhatsAppClickSource =
+  | 'floating_button'
+  | 'costume_detail'
+  | 'catalog'
+  | 'home_hero'
+  | 'home_footer_cta'
+  | 'services_card'
+  | 'services_cta'
+  | 'contact'
+  | 'contact_direct'
+  | 'footer';
+
+/** No se registran eventos desde entornos locales para no contaminar las métricas de producción. */
+function isLocalEnvironment(): boolean {
+  try {
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host.endsWith('.local');
+  } catch {
+    return false;
+  }
+}
 
 function getOrCreateSessionId(): string {
   try {
@@ -17,8 +41,12 @@ function getOrCreateSessionId(): string {
   }
 }
 
-async function insertEvent(costumeId: string, eventType: 'view' | 'whatsapp_click') {
-  if (!isSupabaseConfigured) {
+async function insertEvent(
+  costumeId: string | null,
+  eventType: 'view' | 'whatsapp_click',
+  source: WhatsAppClickSource | null = null
+) {
+  if (!isSupabaseConfigured || isLocalEnvironment()) {
     return;
   }
 
@@ -27,6 +55,7 @@ async function insertEvent(costumeId: string, eventType: 'view' | 'whatsapp_clic
       costume_id: costumeId,
       event_type: eventType,
       session_id: getOrCreateSessionId(),
+      source,
     });
     if (error) {
       console.error('[tracking] failed to record event', error);
@@ -53,7 +82,26 @@ export function trackCostumeView(costumeId: string) {
   void insertEvent(costumeId, 'view');
 }
 
-/** Fire-and-forget: never blocks the WhatsApp CTA from opening. */
-export function trackWhatsAppClick(costumeId: string) {
-  void insertEvent(costumeId, 'whatsapp_click');
+const lastClickAt = new Map<string, number>();
+
+/**
+ * Fire-and-forget: nunca bloquea la apertura de WhatsApp.
+ * Ignora un clic repetido del mismo origen y disfraz dentro de 10 s (doble clic accidental).
+ */
+export function trackWhatsAppClick({
+  source,
+  costumeId,
+}: {
+  source: WhatsAppClickSource;
+  costumeId?: string | null;
+}) {
+  const key = `${source}:${costumeId ?? ''}`;
+  const now = Date.now();
+  const previous = lastClickAt.get(key);
+  if (previous !== undefined && now - previous < CLICK_DEDUP_WINDOW_MS) {
+    return;
+  }
+  lastClickAt.set(key, now);
+
+  void insertEvent(costumeId ?? null, 'whatsapp_click', source);
 }

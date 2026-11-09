@@ -132,7 +132,10 @@ export default function App() {
 
       <Footer />
 
-      <WhatsAppButton selectedCostumeName={activeCostumeForWhatsApp} />
+      <WhatsAppButton
+        selectedCostumeName={activeCostumeForWhatsApp}
+        selectedCostumeId={activeCostume?.id}
+      />
     </div>
     </PublicDataProvider>
   );
