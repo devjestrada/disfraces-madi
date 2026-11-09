@@ -1,5 +1,19 @@
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-09
+
+### Added
+- Sección **Resumen** en el panel administrativo (sección por defecto al iniciar sesión): indicadores del periodo (alquileres, visitas a fichas, clics a WhatsApp, disfraces disponibles), rankings y pendientes del catálogo (alquileres sin vincular, disfraces sin depósito, disfraces sin fotos, fotos sin texto alternativo).
+- Al eliminar un disfraz, el diálogo ofrece ocultarlo del catálogo como alternativa recomendada, muestra las consecuencias (fotos y alquileres del histórico afectados) y exige escribir el slug para confirmar.
+- `ConfirmDialog` acepta props opcionales `destructive`, `details`, `confirmText` y `secondaryAction`; cierra con Escape.
+- Consultas de solo lectura en `adminService`: `countRentalHistoryForCostume` y `fetchCatalogImageHealth`.
+
+### Changed
+- El panel administrativo y sus componentes (Insights, Toast, ConfirmDialog) usan la paleta, tipografías e iconografía de `DESIGN.md`; los errores usan rojo de sistema en vez de Rojo Madi.
+- Navegación del panel en barra lateral con iconos; en móvil se apila arriba.
+- Vista Tabla de disfraces: categoría bajo el nombre, precio de alquiler y depósito en JetBrains Mono ("Solo venta" cuando no hay precio de alquiler, "Sin depósito" cuando falta) e interruptores accesibles de disponible/destacado.
+- Formulario de disfraz organizado en bloques (datos básicos, precios, visibilidad) con interruptores accesibles; tallas agrupadas en Adulto y Niño.
+
 ## [0.11.3] - 2026-08-17
 
 ### Changed
