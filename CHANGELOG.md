@@ -1,5 +1,21 @@
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-09
+
+### Added
+- Migración `013_whatsapp_click_sources.sql`: `costume_events.costume_id` opcional y columna `source` con el origen de cada clic a WhatsApp (los clics previos quedan como `costume_detail`); índice `(event_type, occurred_at)`.
+- Registro de clics a WhatsApp en todos los CTA del sitio público: botón flotante (con el disfraz cuando se usa desde una ficha), ficha de disfraz, catálogo, Inicio (portada y llamado final), Servicios (tarjeta y llamado final), Contacto (agendar cita y número directo) y pie de página.
+- Insights: KPI "Clics a WhatsApp en el periodo", tarjeta "Clics a WhatsApp por origen" y ranking "Disfraces con más clics a WhatsApp" con detalle completo.
+- Nota "Medición completa desde…" junto a los clics, calculada a partir del primer clic registrado desde un origen distinto a la ficha.
+
+### Changed
+- `trackWhatsAppClick` recibe `{ source, costumeId? }` e ignora clics repetidos del mismo origen y disfraz dentro de 10 segundos.
+- Los totales de visitas y clics de Resumen e Insights se calculan con conteos exactos en Supabase; las filas de eventos se descargan paginadas para que los rankings no se corten en 1.000 registros.
+
+### Fixed
+- No se registran visitas ni clics desde entornos locales (`localhost`, `127.0.0.1`, `*.local`), para no contaminar las métricas de producción.
+- "Clics a WhatsApp" dejaba fuera el botón flotante y el resto de CTA del sitio.
+
 ## [0.12.0] - 2026-11-09
 
 ### Added
