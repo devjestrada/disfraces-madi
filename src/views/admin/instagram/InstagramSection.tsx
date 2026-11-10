@@ -29,6 +29,7 @@ export interface InstagramSectionProps {
   categories: AdminCategory[];
   userId: string | null;
   initialTab?: InstagramTab;
+  onOpenCostume: (costumeId: string) => void;
   notify: (text: string, variant?: 'success' | 'error' | 'info') => void;
   notifyError: (error: unknown) => void;
   requestConfirm: (options: { title: string; message: string; confirmLabel: string; onConfirm: () => void }) => void;
@@ -47,7 +48,7 @@ function monthRange({ year, month }: { year: number; month: number }) {
 }
 
 export default function InstagramSection(props: InstagramSectionProps) {
-  const { costumes, categories, userId, initialTab, notify, notifyError, requestConfirm } = props;
+  const { costumes, categories, userId, initialTab, onOpenCostume, notify, notifyError, requestConfirm } = props;
   const [tab, setTab] = useState<InstagramTab>(initialTab ?? 'calendario');
   const [connection, setConnection] = useState<InstagramConnection | null>(null);
   const [connectionLoaded, setConnectionLoaded] = useState(false);
@@ -148,6 +149,7 @@ export default function InstagramSection(props: InstagramSectionProps) {
           costumes={costumes}
           categories={categories}
           userId={userId}
+          onOpenCostume={onOpenCostume}
           onCreated={() => {
             void loadPosts();
             setTab('calendario');

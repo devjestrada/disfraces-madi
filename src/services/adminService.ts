@@ -86,22 +86,29 @@ export async function fetchAdminCostumes() {
 
   const costumes = (data ?? []).map(toAdminCostume);
 
-  const { data: primaryImages, error: imagesError } = await supabaseAdmin
+  // Todas las fotos (solo id del disfraz, ruta y si es principal): foto principal y cantidad de fotos por disfraz.
+  const { data: images, error: imagesError } = await supabaseAdmin
     .from('costume_images')
-    .select('costume_id, storage_path')
-    .eq('is_primary', true);
+    .select('costume_id, storage_path, is_primary')
+    .range(0, 9999);
 
   if (imagesError) {
     throw new Error(imagesError.message);
   }
 
-  const primaryImageByCostumeId = new Map(
-    (primaryImages ?? []).map((row: any) => [row.costume_id, row.storage_path as string])
-  );
+  const primaryImageByCostumeId = new Map<string, string>();
+  const imageCountByCostumeId = new Map<string, number>();
+  (images ?? []).forEach((row: any) => {
+    imageCountByCostumeId.set(row.costume_id, (imageCountByCostumeId.get(row.costume_id) ?? 0) + 1);
+    if (row.is_primary) {
+      primaryImageByCostumeId.set(row.costume_id, row.storage_path as string);
+    }
+  });
 
   return costumes.map((costume) => ({
     ...costume,
     primary_image: primaryImageByCostumeId.get(costume.id) ?? null,
+    image_count: imageCountByCostumeId.get(costume.id) ?? 0,
   }));
 }
 

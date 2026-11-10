@@ -161,6 +161,12 @@ Orden recomendado: migración `015` → app de Meta → secretos → funciones �
 - **Campañas:** al pasar su fecha de fin quedan como terminadas. En pausa, sus carruseles esperan. Con "Sumar los
   disfraces nuevos", cada disfraz nuevo que cumpla los filtros se agrega al próximo carrusel no aprobado con espacio
   (a 2 h o más de su hora) y el texto se reescribe con IA.
+- **Campañas "un disfraz por carrusel":** cada disfraz disponible con 2 o más fotos tiene su propio carrusel con
+  todas sus fotos (principal primero y luego el orden de la galería, máximo 10), una sola vez en la campaña. Los
+  disfraces con una sola foto no entran: se listan en el asistente, en **Resumen** y con la marca "1 foto" en
+  **Disfraces**. Con "Sumar los disfraces nuevos", un disfraz que se agrega o que pasa a tener 2 fotos recibe su
+  carrusel en la siguiente fecha libre (al menos 3 días después); si no quedan fechas, la campaña lo muestra como
+  "sin fecha disponible". Requiere la migración `016_instagram_campaign_per_costume.sql`.
 - **Límites:** máximo 3 publicaciones por pasada, reintentos automáticos (5, 15 y 45 min) ante errores temporales y
   consulta del límite de 100 publicaciones por día de Instagram. Un bloqueo por registro evita publicar dos veces.
 - **Token:** el del inicio de sesión unificado es de usuario del sistema y no vence. Cada hora se comprueba que siga

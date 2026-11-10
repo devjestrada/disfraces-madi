@@ -19,10 +19,11 @@ Este directorio contiene las migraciones SQL versionadas del proyecto.
 - `013_whatsapp_click_sources.sql`: `costume_events.costume_id` opcional y columna `source` con el origen de cada clic a WhatsApp; los clics previos se marcan como `costume_detail`.
 - `014_ai_usage_log.sql`: tabla `ai_usage_log` con el uso de IA por admin (límites por hora y control de costos del flujo "Nuevo disfraz desde foto").
 - `015_instagram_publishing.sql`: publicación programada de carruseles en Instagram (conexión y token solo para la service role, carruseles, imágenes 4:5, reglas, campañas y registro), bucket público `instagram-media` y tipo `caption` en `ai_usage_log`. Configuración en `docs/INSTAGRAM_SETUP.md`.
+- `016_instagram_campaign_per_costume.sql`: campañas de Instagram "un disfraz por carrusel" (agrupación `por_disfraz`, `post_order` y `state` con los disfraces sin fecha disponible; `items_per_post` opcional).
 
 ## Orden de ejecución
 
-Ejecuta las migraciones en orden numérico, sin saltos: `001` -> `015`.
+Ejecuta las migraciones en orden numérico, sin saltos: `001` -> `016`.
 
 ## Guía completa obligatoria
 

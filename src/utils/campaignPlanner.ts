@@ -247,3 +247,76 @@ export function planCampaign(input: PlannerInput): PlannerResult {
 
   return { posts, slotsAvailable: slots.length, postsNeeded: groups.length, feasible: true, suggestions, emptySlots };
 }
+
+// ---------------------------------------------------------------------------------------------
+// Un disfraz por carrusel (spec campanas_carrusel_por_disfraz)
+// ---------------------------------------------------------------------------------------------
+
+export type PerCostumeOrder = 'destacados_primero' | 'alternando';
+
+/** Orden de publicación: destacados primero (alternando categorías dentro de cada bloque) o solo alternando categorías. */
+export function orderPerCostume(costumes: PlannerCostume[], order: PerCostumeOrder) {
+  if (order === 'alternando') {
+    return interleave(groupByCategory(costumes).map((entry) => entry.list));
+  }
+  return [
+    ...interleave(groupByCategory(costumes.filter((c) => c.featured)).map((entry) => entry.list)),
+    ...interleave(groupByCategory(costumes.filter((c) => !c.featured)).map((entry) => entry.list)),
+  ];
+}
+
+export interface PerCostumePlannerInput {
+  costumes: PlannerCostume[];
+  startDate: string;
+  endDate: string;
+  weekdays: number[];
+  time: string;
+  order: PerCostumeOrder;
+  milestones: PlannerMilestones;
+  campaignName: string;
+  now: Date;
+}
+
+/** Un carrusel por disfraz, cada uno una sola vez, repartidos de forma pareja en las fechas disponibles. */
+export function planPerCostume(input: PerCostumePlannerInput): PlannerResult {
+  const slots = listSlots(input);
+  const ordered = orderPerCostume(input.costumes, input.order);
+  const suggestions: string[] = [];
+
+  if (ordered.length > slots.length) {
+    const perWeek = input.weekdays.length;
+    const weeks = perWeek ? slots.length / perWeek : 0;
+    const neededPerWeek = weeks > 0 ? Math.ceil(ordered.length / weeks) : null;
+    if (neededPerWeek && neededPerWeek <= 7 && neededPerWeek > perWeek) {
+      suggestions.push(`Publica ${neededPerWeek} días por semana (hoy son ${perWeek}: ${input.weekdays.map((d) => WEEKDAY_NAMES[d]).join(', ') || 'ninguno'}).`);
+    } else if (perWeek < 7) {
+      suggestions.push(`Agrega días de publicación (hoy son ${perWeek} por semana).`);
+    }
+    suggestions.push(
+      `${ordered.length - slots.length === 1 ? 'Falta 1 fecha' : `Faltan ${ordered.length - slots.length} fechas`}: amplía la fecha de fin o reduce los disfraces incluidos con los filtros.`
+    );
+    return { posts: [], slotsAvailable: slots.length, postsNeeded: ordered.length, feasible: false, suggestions, emptySlots: 0 };
+  }
+
+  const emptySlots = slots.length - ordered.length;
+  if (emptySlots > 0) {
+    suggestions.push(
+      `${emptySlots === 1 ? 'Queda 1 fecha libre' : `Quedan ${emptySlots} fechas libres`}: esos días no se publica nada (y sirven para los disfraces que completes durante la campaña).`
+    );
+  }
+
+  const bandoUsed = { value: false };
+  const posts: PlannedPost[] = ordered.map((costume, index) => {
+    const date = slots[Math.floor((index * slots.length) / ordered.length)];
+    return {
+      date,
+      scheduledAt: toIsoBogota(date, input.time),
+      costumeIds: [costume.id],
+      label: costume.name,
+      theme: themeFor(date, `${input.campaignName}: ${costume.name}`, input.milestones, bandoUsed),
+      repeat: false,
+    };
+  });
+
+  return { posts, slotsAvailable: slots.length, postsNeeded: ordered.length, feasible: true, suggestions, emptySlots };
+}

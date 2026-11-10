@@ -372,6 +372,46 @@ export async function uploadInstagramImage(file: File): Promise<InstagramPostIte
   return { position: 0, costume_id: null, source_bucket: 'instagram-media', source_path: path, alt_text: null };
 }
 
+export const MAX_CAROUSEL_ITEMS = 10;
+
+export interface CostumeGallery {
+  items: InstagramPostItem[];
+  /** Fotos que no caben en el carrusel (más de 10). */
+  leftOut: number;
+}
+
+/**
+ * Galería de cada disfraz en el orden del catálogo (foto principal y luego `sort_order`), lista para un carrusel
+ * de un disfraz: máximo 10 fotos, con su texto alternativo.
+ */
+export async function fetchCostumeGalleries(costumeIds: string[]): Promise<Map<string, CostumeGallery>> {
+  const galleries = new Map<string, CostumeGallery>();
+  if (!costumeIds.length) return galleries;
+  const { data, error } = await supabaseAdmin
+    .from('costume_images')
+    .select('costume_id, storage_path, is_primary, sort_order, alt_text')
+    .in('costume_id', costumeIds)
+    .order('sort_order', { ascending: true })
+    .range(0, 9999);
+  if (error) throw new Error(error.message);
+  const byCostume = new Map<string, any[]>();
+  (data ?? []).forEach((row: any) => byCostume.set(row.costume_id, [...(byCostume.get(row.costume_id) ?? []), row]));
+  byCostume.forEach((rows, costumeId) => {
+    const ordered = [...rows].sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order);
+    galleries.set(costumeId, {
+      items: ordered.slice(0, MAX_CAROUSEL_ITEMS).map((row, position) => ({
+        position,
+        costume_id: costumeId,
+        source_bucket: 'costume-images',
+        source_path: row.storage_path,
+        alt_text: row.alt_text ?? null,
+      })),
+      leftOut: Math.max(0, ordered.length - MAX_CAROUSEL_ITEMS),
+    });
+  });
+  return galleries;
+}
+
 /** Texto alternativo de la foto principal de cada disfraz, para reutilizarlo en Instagram. */
 export async function fetchPrimaryAltTexts(costumeIds: string[]) {
   if (!costumeIds.length) return new Map<string, string>();
@@ -397,13 +437,15 @@ export interface InstagramCampaign {
   end_date: string;
   weekdays: number[];
   publish_time: string;
-  items_per_post: number;
-  grouping: 'categoria' | 'mezclado' | 'destacados_primero';
+  items_per_post: number | null;
+  grouping: 'categoria' | 'mezclado' | 'destacados_primero' | 'por_disfraz';
+  post_order: 'destacados_primero' | 'alternando';
   filters: Record<string, unknown>;
   milestones: unknown;
   requires_approval: boolean;
   include_new_costumes: boolean;
   status: CampaignStatus;
+  state: { sin_fecha?: Array<{ costume_id: string; name: string; detected_at: string }> } | null;
   created_at: string;
   counts: Partial<Record<InstagramPostStatus, number>>;
 }
@@ -430,8 +472,9 @@ export interface NewCampaignInput {
   end_date: string;
   weekdays: number[];
   publish_time: string;
-  items_per_post: number;
+  items_per_post: number | null;
   grouping: InstagramCampaign['grouping'];
+  post_order?: InstagramCampaign['post_order'];
   filters: Record<string, unknown>;
   milestones: unknown;
   requires_approval: boolean;

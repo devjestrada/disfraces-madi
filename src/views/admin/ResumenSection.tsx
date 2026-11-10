@@ -257,6 +257,16 @@ export default function ResumenSection({
       });
     }
   }
+  const singlePhoto = costumes.filter((costume) => costume.is_available && costume.image_count === 1);
+  if (singlePhoto.length > 0) {
+    pending.push({
+      key: 'single-photo',
+      title: `${singlePhoto.length} ${singlePhoto.length === 1 ? 'disfraz con una sola foto' : 'disfraces con una sola foto'}`,
+      description: 'No entran en las campañas de Instagram de un disfraz por carrusel (se necesitan al menos 2).',
+      actionLabel: singlePhoto.length === 1 ? 'Subir fotos' : 'Ver disfraces',
+      onAction: firstOrList(singlePhoto),
+    });
+  }
   if (imageHealth && imageHealth.imagesWithoutAlt > 0) {
     pending.push({
       key: 'alt',
