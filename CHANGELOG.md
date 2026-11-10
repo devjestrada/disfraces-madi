@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.15.1] - 2026-11-10
+
+### Fixed
+- Las campañas de Instagram con 2 disfraces por carrusel ya no generan un carrusel de una sola foto cuando el número de disfraces (de una categoría o en total) es impar; el sobrante se suma a otro carrusel, que queda de 3. Instagram rechaza los carruseles de menos de 2 imágenes.
+
 ## [0.15.0] - 2026-11-09
 
 ### Added
