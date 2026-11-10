@@ -54,6 +54,7 @@ import type { AiCostumeDraft } from '../services/aiCostumeService';
 import {
   BarChart3,
   Camera,
+  Images,
   LayoutDashboard,
   LogOut,
   Palette,
@@ -66,13 +67,15 @@ import {
 const InsightsSection = lazy(() => import('./admin/InsightsSection'));
 const ResumenSection = lazy(() => import('./admin/ResumenSection'));
 const CrearDesdeFoto = lazy(() => import('./admin/CrearDesdeFoto'));
+const InstagramSection = lazy(() => import('./admin/instagram/InstagramSection'));
 
-type AdminSection = 'resumen' | 'disfraces' | 'insights' | 'telas-accesorios' | 'configuracion';
+type AdminSection = 'resumen' | 'disfraces' | 'insights' | 'instagram' | 'telas-accesorios' | 'configuracion';
 
 const ADMIN_SECTIONS: Array<{ id: AdminSection; label: string; icon: typeof Shirt }> = [
   { id: 'resumen', label: 'Resumen', icon: LayoutDashboard },
   { id: 'disfraces', label: 'Disfraces', icon: Shirt },
   { id: 'insights', label: 'Insights', icon: BarChart3 },
+  { id: 'instagram', label: 'Instagram', icon: Images },
   { id: 'telas-accesorios', label: 'Telas y accesorios', icon: Palette },
   { id: 'configuracion', label: 'Configuración del sitio', icon: Settings },
 ];
@@ -192,6 +195,7 @@ export default function Admin() {
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [activeSection, setActiveSection] = useState<AdminSection>('resumen');
   const [showPhotoWizard, setShowPhotoWizard] = useState(false);
+  const [instagramTab, setInstagramTab] = useState<'calendario' | 'campanas' | 'reglas' | 'conexion' | undefined>(undefined);
   const validatedAdminIdRef = useRef<string | null>(null);
   const [pendingPrefill, setPendingPrefill] = useState<AiCostumeDraft | null>(null);
   const [aiDraft, setAiDraft] = useState<AiDraftState | null>(null);
@@ -238,6 +242,53 @@ export default function Admin() {
     setToast({ text: error instanceof Error ? error.message : String(error), variant: 'error' });
 
   const userEmail = useMemo(() => session?.user?.email ?? '', [session]);
+
+  const requestConfirm = (options: { title: string; message: string; confirmLabel: string; onConfirm: () => void }) =>
+    setConfirmState({
+      title: options.title,
+      message: options.message,
+      confirmLabel: options.confirmLabel,
+      onConfirm: () => {
+        setConfirmState(null);
+        options.onConfirm();
+      },
+    });
+
+  const openInstagram = (tab?: 'calendario' | 'campanas' | 'reglas' | 'conexion') => {
+    setInstagramTab(tab);
+    setActiveSection('instagram');
+  };
+
+  // Regreso del inicio de sesión de Instagram (instagram-oauth-callback → /admin?instagram=...).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get('instagram');
+    if (!result) {
+      return;
+    }
+    const detail = params.get('detalle');
+    setInstagramTab('conexion');
+    setActiveSection('instagram');
+    if (result === 'conectado') {
+      setToast({ text: 'Cuenta de Instagram conectada.', variant: 'success' });
+    } else {
+      const reasons: Record<string, string> = {
+        cancelado: 'Se canceló el inicio de sesión en Instagram.',
+        enlace_vencido: 'El enlace de conexión venció. Intenta conectar de nuevo.',
+        sin_permiso: 'Esa sesión no tiene permisos de admin.',
+        sin_cuenta:
+          'Meta no asignó ninguna cuenta de Instagram a la app. Vuelve a conectar y elige la cuenta de Disfraces Madi; si sigue igual, revisa en el portafolio empresarial que la cuenta esté asignada a la app.',
+      };
+      setToast({
+        text: reasons[detail ?? ''] ?? 'No se pudo conectar Instagram. Intenta de nuevo; si sigue fallando, revisa la configuración de la app en Meta.',
+        variant: 'error',
+      });
+    }
+    params.delete('instagram');
+    params.delete('detalle');
+    const query = params.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
+  }, []);
   const selectedCostume = useMemo(
     () => costumes.find((item) => item.id === selectedCostumeId) ?? null,
     [costumes, selectedCostumeId]
@@ -1398,7 +1449,10 @@ export default function Admin() {
                   <button
                     key={section.id}
                     type="button"
-                    onClick={() => setActiveSection(section.id)}
+                    onClick={() => {
+                      setInstagramTab(undefined);
+                      setActiveSection(section.id);
+                    }}
                     aria-current={isActive ? 'page' : undefined}
                     className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150 ease-out ${
                       isActive
@@ -1463,6 +1517,7 @@ export default function Admin() {
                 onOpenCostume={handleNavigateToCostumeFromInsights}
                 onGoToInsights={() => setActiveSection('insights')}
                 onGoToCostumes={() => setActiveSection('disfraces')}
+                onGoToInstagram={() => openInstagram('calendario')}
               />
             </Suspense>
           ) : null}
@@ -2470,6 +2525,20 @@ export default function Admin() {
           {activeSection === 'insights' ? (
             <Suspense fallback={<p className="text-sm text-[#5C5257]">Cargando Insights...</p>}>
               <InsightsSection onNavigateToCostume={handleNavigateToCostumeFromInsights} />
+            </Suspense>
+          ) : null}
+
+          {activeSection === 'instagram' ? (
+            <Suspense fallback={<p className="text-sm text-[#5C5257]">Cargando Instagram...</p>}>
+              <InstagramSection
+                costumes={costumes}
+                categories={categories}
+                userId={session?.user?.id ?? null}
+                initialTab={instagramTab}
+                notify={notify}
+                notifyError={notifyError}
+                requestConfirm={requestConfirm}
+              />
             </Suspense>
           ) : null}
 

@@ -14,6 +14,12 @@ import {
   type CostumeEventRow,
 } from '../../services/insightsService';
 import { fetchCatalogImageHealth, type CatalogImageHealth } from '../../services/adminService';
+import {
+  fetchAttentionPosts,
+  fetchInstagramConnection,
+  type InstagramConnection,
+  type InstagramPost,
+} from '../../services/instagramService';
 import { getPeriodRange, getPreviousEquivalentRange, percentChange } from '../../utils/dateRanges';
 import type { AdminCostume, AdminRentalHistoryRow, DateRange, InsightsPeriodPreset } from '../../types';
 
@@ -24,6 +30,7 @@ interface ResumenSectionProps {
   onOpenCostume: (costumeId: string) => void;
   onGoToInsights: () => void;
   onGoToCostumes: () => void;
+  onGoToInstagram: () => void;
 }
 
 interface PendingItem {
@@ -42,6 +49,7 @@ export default function ResumenSection({
   onOpenCostume,
   onGoToInsights,
   onGoToCostumes,
+  onGoToInstagram,
 }: ResumenSectionProps) {
   const [period, setPeriod] = useState<InsightsPeriodPreset>('mes');
   const [customRange, setCustomRange] = useState<DateRange>({ from: null, to: null });
@@ -51,6 +59,7 @@ export default function ResumenSection({
   const [viewEvents, setViewEvents] = useState<CostumeEventRow[]>([]);
   const [whatsappEvents, setWhatsappEvents] = useState<CostumeEventRow[]>([]);
   const [imageHealth, setImageHealth] = useState<CatalogImageHealth | null>(null);
+  const [instagram, setInstagram] = useState<{ posts: InstagramPost[]; connection: InstagramConnection | null } | null>(null);
   const [eventTotals, setEventTotals] = useState({ viewsNow: 0, viewsPrev: 0, clicksNow: 0, clicksPrev: 0 });
 
   useEffect(() => {
@@ -83,6 +92,19 @@ export default function ResumenSection({
       }
     };
     load();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Avisos de Instagram: aparte, para que un fallo aquí no afecte el resto del resumen.
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([fetchAttentionPosts(), fetchInstagramConnection()])
+      .then(([posts, connection]) => {
+        if (isMounted) setInstagram({ posts, connection });
+      })
+      .catch((error) => console.warn('[resumen] avisos de Instagram no disponibles', error));
     return () => {
       isMounted = false;
     };
@@ -200,6 +222,40 @@ export default function ResumenSection({
       actionLabel: withoutPhotos.length === 1 ? 'Subir fotos' : 'Ver disfraces',
       onAction: firstOrList(withoutPhotos),
     });
+  }
+  if (instagram) {
+    const failed = instagram.posts.filter((post) => post.status === 'fallido').length;
+    const toApprove = instagram.posts.filter((post) => post.status === 'pendiente').length;
+    const connection = instagram.connection;
+    if (connection?.last_error) {
+      pending.push({
+        key: 'instagram-token',
+        title: 'La conexión con Instagram necesita atención',
+        description: 'Mientras no se reconecte, no se publica ningún carrusel.',
+        actionLabel: 'Revisar',
+        onAction: onGoToInstagram,
+        highlight: true,
+      });
+    }
+    if (toApprove > 0) {
+      pending.push({
+        key: 'instagram-approve',
+        title: `${toApprove} ${toApprove === 1 ? 'carrusel por aprobar' : 'carruseles por aprobar'} en las próximas 48 h`,
+        description: 'Si nadie los aprueba antes de su hora, no se publican en Instagram.',
+        actionLabel: 'Revisar',
+        onAction: onGoToInstagram,
+        highlight: true,
+      });
+    }
+    if (failed > 0) {
+      pending.push({
+        key: 'instagram-failed',
+        title: `${failed} ${failed === 1 ? 'carrusel de Instagram falló' : 'carruseles de Instagram fallaron'}`,
+        description: 'Revisa el motivo y reintenta desde el calendario.',
+        actionLabel: 'Ver',
+        onAction: onGoToInstagram,
+      });
+    }
   }
   if (imageHealth && imageHealth.imagesWithoutAlt > 0) {
     pending.push({

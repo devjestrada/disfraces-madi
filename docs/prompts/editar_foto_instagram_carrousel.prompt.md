@@ -1,0 +1,3 @@
+Reencuadra esta fotografía de estudio a una relación de aspecto 4:5 (1080x1350 px) para publicación de Instagram. Mantén el fondo gris 
+liso de estudio, uniforme, sin textura ni sombras nuevas. No recortes ninguna parte del cuerpo, el disfraz, ni los accesorios de la persona 
+— si es necesario, extiende el fondo gris en los bordes en lugar de recortar. Centra a la persona horizontalmente en el encuadre, dejando espacio de aire equilibrado arriba y a los lados. No alteres el color, la iluminación, la pose ni los rasgos de la persona. No agregues elementos, texto ni marcas de agua nuevas.
