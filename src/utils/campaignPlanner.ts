@@ -85,10 +85,15 @@ export function listSlots(input: Pick<PlannerInput, 'startDate' | 'endDate' | 'w
   return slots;
 }
 
-/** Parte una lista en `ceil(n / k)` grupos lo más parejos posible (ej. 7 con k=5 → 4 + 3). */
+/**
+ * Parte una lista en `ceil(n / k)` grupos lo más parejos posible (ej. 7 con k=5 → 4 + 3).
+ * Un carrusel necesita al menos 2 imágenes, así que nunca deja un grupo de 1: con k=2 y n impar, el sobrante se
+ * suma a otro grupo (ej. 5 con k=2 → 3 + 2). Solo con k=2 un grupo puede pasar de k (queda en 3).
+ */
 export function chunkEvenly<T>(list: T[], maxSize: number): T[][] {
   if (!list.length) return [];
-  const count = Math.ceil(list.length / maxSize);
+  if (list.length < 2) return [list.slice()];
+  const count = Math.min(Math.ceil(list.length / maxSize), Math.floor(list.length / 2));
   const base = Math.floor(list.length / count);
   let extra = list.length % count;
   const chunks: T[][] = [];
