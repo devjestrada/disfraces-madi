@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-09
+
+### Added
+- Sección **Instagram** en el panel administrativo para programar carruseles del feed, con pestañas Calendario, Campañas, Reglas y Conexión. Toda la programación es en hora de Colombia.
+- Conexión de una cuenta profesional de Instagram con el **inicio de sesión unificado** de Meta (el único disponible para apps nuevas): token de usuario del sistema sin vencimiento, guardado solo del lado del servidor y comprobado cada hora; si Meta lo rechaza, no se publica y se avisa para reconectar.
+- Carruseles manuales de 2 a 10 imágenes (disfraces del catálogo o imágenes propias): reordenar, vista previa 4:5, texto escrito o generado con IA (precios de alquiler, venta y depósito reembolsable, invitación a agendar por WhatsApp, sin dirección), texto alternativo por imagen, programar o "Publicar ahora".
+- Calendario mensual y de lista con estados (borrador, pendiente de aprobación, programado, publicando, publicado con enlace, fallido con motivo y "Reintentar", cancelado), aprobación individual o en bloque, edición, cambio de fecha y cancelación.
+- Reglas recurrentes **Novedades**, **Los más alquilados del mes** y **Categoría de la semana**, semanales o mensuales: generan su carrusel 3 días antes de cada fecha, pendiente de aprobación salvo que se desactive.
+- Campañas con planificador (caso principal: "Todo el catálogo antes del Carnaval 2027"): fechas, días y hora, filtros por categoría, destacados y adulto/niño, exclusión manual, agrupación, hitos de la Lectura del Bando y cuenta regresiva al Carnaval, validación de que el plan cabe con sugerencias y vista previa antes de crear. Cada disfraz disponible con foto aparece al menos una vez. Se pueden pausar, reanudar o cancelar, y opcionalmente suman los disfraces nuevos a los carruseles aún no aprobados.
+- Publicación automática cada 5 minutos (`pg_cron` → Edge Function `instagram-scheduler`): imágenes del catálogo llevadas a JPEG 4:5 de 1080 × 1350 extendiendo el fondo de estudio (sin IA), contenedores de carrusel con texto alternativo, hasta 3 reintentos con espera creciente, respeto del límite diario de Instagram y bloqueo para no publicar dos veces.
+- Avisos en **Resumen**: carruseles por aprobar en las próximas 48 h, carruseles fallidos y conexión de Instagram con error.
+- Edge Functions `instagram-auth`, `instagram-oauth-callback`, `instagram-caption` e `instagram-scheduler`.
+- Migración `015_instagram_publishing.sql`: conexión y token (este último solo accesible por la service role), carruseles e imágenes, variantes 4:5, reglas, campañas y registro de publicaciones, todo con RLS de solo admin; bucket público `instagram-media`; nuevo tipo `caption` en `ai_usage_log`.
+- Guía `docs/INSTAGRAM_SETUP.md`: app de Meta con inicio de sesión unificado (sin App Review para la cuenta propia), secretos, despliegue, tarea `pg_cron` y verificación.
+
 ## [0.14.0] - 2026-11-09
 
 ### Added
