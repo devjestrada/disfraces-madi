@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-10
+
+### Added
+- Campañas de Instagram **"Un disfraz por carrusel"**: cada disfraz disponible con 2 o más fotos tiene su propio carrusel con todas sus fotos (principal primero y luego el orden de la galería, máximo 10, con su texto alternativo), una sola vez en la campaña, con orden "destacados primero" o "alternando categorías". El plan pide una fecha por disfraz y propone cómo ajustarlo si no alcanzan; la vista previa muestra todas las fotos de cada carrusel.
+- Disfraces con una sola foto identificados: lista aparte en el asistente de campañas (con acceso para abrirlos), aviso en **Resumen → Pendientes** y marca "1 foto" en **Disfraces** (vistas Tabla y Lista).
+- La tarea programada da su carrusel, en la siguiente fecha libre de la campaña, a los disfraces nuevos o que pasan a tener 2 fotos durante una campaña "un disfraz por carrusel"; si no quedan fechas, la campaña los muestra como "sin fecha disponible".
+- Botón **"Usar las fotos actuales del disfraz"** en el editor de carruseles de un solo disfraz.
+- Migración `016_instagram_campaign_per_costume.sql`: agrupación `por_disfraz`, orden de publicación y estado de la campaña.
+
+### Changed
+- La lista de disfraces del panel trae la cantidad de fotos de cada uno.
+
 ## [0.15.1] - 2026-11-10
 
 ### Fixed

@@ -21,7 +21,11 @@ interface CatalogCostume {
   created_at: string;
   primary_path: string;
   alt_text: string | null;
+  /** Galería en el orden del catálogo (principal y luego sort_order), máx. 10, para carruseles de un disfraz. */
+  gallery: Array<{ path: string; alt_text: string | null }>;
 }
+
+const MAX_CAROUSEL_ITEMS = 10;
 
 // ---------------------------------------------------------------------------------------------
 // Fechas en hora de Colombia
@@ -64,12 +68,15 @@ export function nextOccurrence(rule: { cadence: string; weekday: number; publish
 async function loadCatalog(ctx: SchedulerContext): Promise<CatalogCostume[]> {
   const { data, error } = await ctx.db
     .from('costumes')
-    .select('id, name, category_id, featured, created_at, categories(name), costume_images(storage_path, alt_text, is_primary)')
+    .select('id, name, category_id, featured, created_at, categories(name), costume_images(storage_path, alt_text, is_primary, sort_order)')
     .eq('is_available', true);
   if (error) throw new Error(error.message);
   return (data ?? [])
     .map((row: any) => {
-      const primary = (row.costume_images ?? []).find((image: any) => image.is_primary);
+      const images = [...(row.costume_images ?? [])].sort(
+        (a: any, b: any) => Number(b.is_primary) - Number(a.is_primary) || Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0)
+      );
+      const primary = images.find((image: any) => image.is_primary);
       if (!primary) return null;
       return {
         id: row.id,
@@ -80,6 +87,7 @@ async function loadCatalog(ctx: SchedulerContext): Promise<CatalogCostume[]> {
         created_at: row.created_at,
         primary_path: primary.storage_path,
         alt_text: primary.alt_text ?? null,
+        gallery: images.slice(0, MAX_CAROUSEL_ITEMS).map((image: any) => ({ path: image.storage_path, alt_text: image.alt_text ?? null })),
       } as CatalogCostume;
     })
     .filter(Boolean) as CatalogCostume[];
@@ -98,8 +106,18 @@ async function captionFor(ctx: SchedulerContext, costumeIds: string[], theme: st
 
 async function insertPost(
   ctx: SchedulerContext,
-  post: { source: 'regla'; rule_id: string; title: string; caption: string; scheduled_at: string; requiresApproval: boolean },
-  costumes: CatalogCostume[]
+  post: {
+    source: 'regla' | 'campana';
+    rule_id?: string;
+    campaign_id?: string;
+    title: string;
+    caption: string;
+    scheduled_at: string;
+    requiresApproval: boolean;
+  },
+  costumes: CatalogCostume[],
+  /** Carrusel de un solo disfraz con todas sus fotos (en vez de la foto principal de cada disfraz). */
+  useGallery = false
 ) {
   const status = !post.caption ? 'borrador' : post.requiresApproval ? 'pendiente' : 'programado';
   const nowIso = ctx.now.toISOString();
@@ -107,7 +125,8 @@ async function insertPost(
     .from('instagram_posts')
     .insert({
       source: post.source,
-      rule_id: post.rule_id,
+      rule_id: post.rule_id ?? null,
+      campaign_id: post.campaign_id ?? null,
       title: post.title,
       caption: post.caption,
       scheduled_at: post.scheduled_at,
@@ -117,16 +136,24 @@ async function insertPost(
     .select('id')
     .single();
   if (error) throw new Error(error.message);
-  const { error: itemsError } = await ctx.db.from('instagram_post_items').insert(
-    costumes.map((costume, position) => ({
-      post_id: data.id,
-      position,
-      costume_id: costume.id,
-      source_bucket: 'costume-images',
-      source_path: costume.primary_path,
-      alt_text: costume.alt_text,
-    }))
-  );
+  const rows = useGallery
+    ? costumes[0].gallery.map((image, position) => ({
+        post_id: data.id,
+        position,
+        costume_id: costumes[0].id,
+        source_bucket: 'costume-images',
+        source_path: image.path,
+        alt_text: image.alt_text,
+      }))
+    : costumes.map((costume, position) => ({
+        post_id: data.id,
+        position,
+        costume_id: costume.id,
+        source_bucket: 'costume-images',
+        source_path: costume.primary_path,
+        alt_text: costume.alt_text,
+      }));
+  const { error: itemsError } = await ctx.db.from('instagram_post_items').insert(rows);
   if (itemsError) {
     await ctx.db.from('instagram_posts').delete().eq('id', data.id);
     throw new Error(itemsError.message);
@@ -314,7 +341,7 @@ async function runCampaigns(ctx: SchedulerContext, catalog: CatalogCostume[] | n
   // 2. Disfraces nuevos en campañas activas.
   const { data: campaigns, error } = await ctx.db
     .from('instagram_campaigns')
-    .select('id, name, created_at, filters, requires_approval')
+    .select('id, name, created_at, filters, requires_approval, grouping, weekdays, publish_time, end_date, milestones, state')
     .eq('status', 'activa')
     .eq('include_new_costumes', true);
   if (error) throw new Error(error.message);
@@ -326,9 +353,13 @@ async function runCampaigns(ctx: SchedulerContext, catalog: CatalogCostume[] | n
   const editableFrom = new Date(ctx.now.getTime() + CAMPAIGN_EDIT_MARGIN_MS).toISOString();
 
   for (const campaign of campaigns) {
+    if (campaign.filters?.kind === 'adulto' || campaign.filters?.kind === 'nino') sizeKinds = sizeKinds ?? (await loadSizeKinds(ctx));
+    if (campaign.grouping === 'por_disfraz') {
+      added += await schedulePerCostume(ctx, campaign, catalog, sizeKinds ?? new Map());
+      continue;
+    }
     const candidates = catalog.filter((costume) => costume.created_at > campaign.created_at);
     if (!candidates.length) continue;
-    if (campaign.filters?.kind === 'adulto' || campaign.filters?.kind === 'nino') sizeKinds = sizeKinds ?? (await loadSizeKinds(ctx));
     const newOnes = candidates.filter((costume) => matchesFilters(costume, campaign.filters, sizeKinds ?? new Map()));
     if (!newOnes.length) continue;
 
@@ -392,6 +423,106 @@ async function runCampaigns(ctx: SchedulerContext, catalog: CatalogCostume[] | n
     }
   }
   return { terminadas: finished?.length ?? 0, sumados: added };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Campañas "un disfraz por carrusel" (spec campanas_carrusel_por_disfraz)
+// ---------------------------------------------------------------------------------------------
+
+/** Al menos este margen entre que se detecta un disfraz y su carrusel, para poder revisarlo. */
+const PER_COSTUME_LEAD_DAYS = 3;
+
+function countdownTheme(date: string, base: string, milestones: any) {
+  const parts = [base];
+  const bando: string | null = milestones?.bando ?? null;
+  const carnival: string | null = milestones?.carnival ?? null;
+  if (bando && date === bando) parts.push('Hoy es la Lectura del Bando: arranca oficialmente la temporada de Carnaval');
+  if (carnival && bando && date >= bando && date < carnival) {
+    const days = Math.round((new Date(`${carnival}T12:00:00Z`).getTime() - new Date(`${date}T12:00:00Z`).getTime()) / DAY_MS);
+    parts.push(`Cuenta regresiva: faltan ${days} ${days === 1 ? 'día' : 'días'} para el Carnaval de Barranquilla`);
+  }
+  return parts.join('. ');
+}
+
+/**
+ * Da su propio carrusel, en la siguiente fecha libre de la campaña, a cada disfraz que cumple los filtros, tiene
+ * 2 o más fotos y aún no está en la campaña (nuevo, o que se completó después de crearla). Si no quedan fechas, lo
+ * deja en `state.sin_fecha`.
+ */
+async function schedulePerCostume(
+  ctx: SchedulerContext,
+  campaign: any,
+  catalog: CatalogCostume[],
+  sizeKinds: Map<string, { adult: boolean; child: boolean }>
+) {
+  const excluded: string[] = Array.isArray(campaign.filters?.excluded) ? campaign.filters.excluded : [];
+  const { data: posts, error } = await ctx.db
+    .from('instagram_posts')
+    .select('scheduled_at, status, instagram_post_items(costume_id)')
+    .eq('campaign_id', campaign.id);
+  if (error) throw new Error(error.message);
+
+  const inCampaign = new Set((posts ?? []).flatMap((post: any) => (post.instagram_post_items ?? []).map((item: any) => item.costume_id)));
+  const pending = catalog.filter(
+    (costume) =>
+      costume.gallery.length >= 2 &&
+      !inCampaign.has(costume.id) &&
+      !excluded.includes(costume.id) &&
+      matchesFilters(costume, campaign.filters, sizeKinds)
+  );
+
+  const previous: Array<{ costume_id: string; name: string; detected_at: string }> = campaign.state?.sin_fecha ?? [];
+  if (!pending.length && !previous.length) return 0;
+
+  // Fechas ocupadas (por día en Colombia) y fechas libres desde hoy + margen hasta el fin de la campaña.
+  const taken = new Set(
+    (posts ?? []).filter((post: any) => post.status !== 'cancelado').map((post: any) => bogotaToday(new Date(post.scheduled_at)))
+  );
+  const weekdays: number[] = campaign.weekdays ?? [];
+  const firstDay = addDays(bogotaToday(ctx.now), PER_COSTUME_LEAD_DAYS);
+  const freeDates: string[] = [];
+  for (let date = firstDay; date <= campaign.end_date; date = addDays(date, 1)) {
+    const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+    if (weekdays.includes(weekday) && !taken.has(date)) freeDates.push(date);
+  }
+
+  let added = 0;
+  const withoutDate: Array<{ costume_id: string; name: string; detected_at: string }> = [];
+  for (const costume of pending.sort((a, b) => Number(b.featured) - Number(a.featured) || a.created_at.localeCompare(b.created_at))) {
+    const date = freeDates.shift();
+    if (!date) {
+      const before = previous.find((entry) => entry.costume_id === costume.id);
+      withoutDate.push({ costume_id: costume.id, name: costume.name, detected_at: before?.detected_at ?? ctx.now.toISOString() });
+      continue;
+    }
+    const theme = countdownTheme(date, `${campaign.name}: ${costume.name}`, campaign.milestones);
+    const caption = await captionFor(ctx, [costume.id], theme);
+    const created = await insertPost(
+      ctx,
+      {
+        source: 'campana',
+        campaign_id: campaign.id,
+        title: `${campaign.name} · ${costume.name}`,
+        caption,
+        scheduled_at: toIso(date, campaign.publish_time),
+        requiresApproval: campaign.requires_approval,
+      },
+      [costume],
+      true
+    );
+    await log(ctx, created.id, 'info', `Carrusel creado para ${costume.name} (disfraz nuevo o completado durante la campaña).`);
+    added += 1;
+  }
+
+  const changed =
+    withoutDate.length !== previous.length || withoutDate.some((entry) => !previous.find((p) => p.costume_id === entry.costume_id));
+  if (changed) {
+    await ctx.db
+      .from('instagram_campaigns')
+      .update({ state: { ...(campaign.state ?? {}), sin_fecha: withoutDate }, updated_at: ctx.now.toISOString() })
+      .eq('id', campaign.id);
+  }
+  return added;
 }
 
 export async function runAutomations(ctx: SchedulerContext) {

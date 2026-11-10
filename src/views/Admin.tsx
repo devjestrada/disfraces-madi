@@ -501,6 +501,19 @@ export default function Admin() {
     }
   };
 
+  // Mantiene al día la cantidad de fotos del disfraz abierto (marca "1 foto" y campañas de Instagram).
+  useEffect(() => {
+    const costumeId = images[0]?.costume_id;
+    if (isLoadingImages || !costumeId) {
+      return;
+    }
+    setCostumes((prev) =>
+      prev.map((costume) =>
+        costume.id === costumeId && costume.image_count !== images.length ? { ...costume, image_count: images.length } : costume
+      )
+    );
+  }, [images, isLoadingImages]);
+
   const loadRelations = async (costumeId: string) => {
     setToast(null);
     try {
@@ -1601,6 +1614,14 @@ export default function Admin() {
                           <p className="mt-1 text-xs text-[#5C5257]">
                             {costume.category_name ?? 'Sin categoria'}
                           </p>
+                          {costume.is_available && costume.image_count === 1 ? (
+                            <span
+                              title="Tiene una sola foto: no entra en las campañas de Instagram de un disfraz por carrusel."
+                              className="mt-1 inline-block rounded-full border border-[#1A1418]/20 px-2 py-0.5 text-[11px] font-medium text-[#5C5257]"
+                            >
+                              1 foto
+                            </span>
+                          ) : null}
                         </button>
 
                         <div className="mt-2 flex flex-col items-start gap-1.5">
@@ -1661,6 +1682,14 @@ export default function Admin() {
                                 <span className="block text-xs font-normal text-[#5C5257]">
                                   {costume.category_name ?? 'Sin categoria'}
                                 </span>
+                                {costume.is_available && costume.image_count === 1 ? (
+                            <span
+                              title="Tiene una sola foto: no entra en las campañas de Instagram de un disfraz por carrusel."
+                              className="mt-1 inline-block font-normal rounded-full border border-[#1A1418]/20 px-2 py-0.5 text-[11px] font-medium text-[#5C5257]"
+                            >
+                              1 foto
+                            </span>
+                          ) : null}
                               </button>
                             </td>
                             <td className="whitespace-nowrap px-3 py-2 text-right">
@@ -2535,6 +2564,7 @@ export default function Admin() {
                 categories={categories}
                 userId={session?.user?.id ?? null}
                 initialTab={instagramTab}
+                onOpenCostume={handleNavigateToCostumeFromInsights}
                 notify={notify}
                 notifyError={notifyError}
                 requestConfirm={requestConfirm}

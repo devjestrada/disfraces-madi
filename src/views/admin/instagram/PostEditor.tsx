@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, ImagePlus, Search, Send, Sparkles, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ImagePlus, RefreshCw, Search, Send, Sparkles, X } from 'lucide-react';
 import type { AdminCategory, AdminCostume } from '../../../types';
 import {
   createInstagramPost,
+  fetchCostumeGalleries,
   fetchPrimaryAltTexts,
   fromBogotaInput,
   generateInstagramCaption,
@@ -48,8 +49,37 @@ export default function PostEditor({ post, costumes, categories, userId, onClose
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState('');
   const [formError, setFormError] = useState('');
+  const [isLoadingGallery, setIsLoadingGallery] = useState(false);
+  const [galleryNote, setGalleryNote] = useState('');
 
   const costumeById = useMemo(() => new Map(costumes.map((costume) => [costume.id, costume])), [costumes]);
+
+  // Carrusel de un solo disfraz (por ejemplo, de una campaña "un disfraz por carrusel").
+  const singleCostumeId =
+    items.length > 0 && items[0].costume_id && items.every((item) => item.costume_id === items[0].costume_id)
+      ? items[0].costume_id
+      : null;
+
+  const loadCurrentPhotos = async () => {
+    if (!singleCostumeId) return;
+    setIsLoadingGallery(true);
+    setGalleryNote('');
+    try {
+      const gallery = (await fetchCostumeGalleries([singleCostumeId])).get(singleCostumeId);
+      if (!gallery || gallery.items.length < 2) {
+        setGalleryNote('El disfraz tiene menos de 2 fotos en el catálogo: se mantienen las del carrusel.');
+        return;
+      }
+      setItems(gallery.items);
+      setGalleryNote(
+        `Se cargaron ${gallery.items.length} fotos del catálogo${gallery.leftOut ? ` (${gallery.leftOut} quedan fuera: máximo 10)` : ''}.`
+      );
+    } catch (error) {
+      onError(error);
+    } finally {
+      setIsLoadingGallery(false);
+    }
+  };
 
   const candidates = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -299,6 +329,15 @@ export default function PostEditor({ post, costumes, categories, userId, onClose
               2. Orden y textos
             </h4>
             <p className="font-mono text-xs text-[#5C5257]">{items.length} / {MAX_ITEMS} imágenes · formato del feed 4:5</p>
+            {singleCostumeId ? (
+              <div className="space-y-1">
+                <button type="button" onClick={() => void loadCurrentPhotos()} disabled={isLoadingGallery} className={secondaryButton}>
+                  <RefreshCw size={18} strokeWidth={1.75} aria-hidden="true" />
+                  {isLoadingGallery ? 'Cargando fotos...' : 'Usar las fotos actuales del disfraz'}
+                </button>
+                {galleryNote ? <p role="status" className="text-xs text-[#5C5257]">{galleryNote}</p> : null}
+              </div>
+            ) : null}
             {items.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#1A1418]/20 p-4 text-sm text-[#5C5257]">
                 Aún no hay imágenes. Elige disfraces a la izquierda.

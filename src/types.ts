@@ -112,6 +112,8 @@ export interface AdminCostume {
   created_at: string;
   updated_at: string;
   primary_image?: string | null;
+  /** Cantidad de fotos del disfraz (galería completa). */
+  image_count?: number;
 }
 
 export interface AdminCostumeImage {
