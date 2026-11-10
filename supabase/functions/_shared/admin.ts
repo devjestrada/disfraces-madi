@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { errorResponse } from './http.ts';
 
-export type AiUsageKind = 'photo_edit' | 'data_extract';
+export type AiUsageKind = 'photo_edit' | 'data_extract' | 'caption';
 
 export interface AdminContext {
   userId: string;

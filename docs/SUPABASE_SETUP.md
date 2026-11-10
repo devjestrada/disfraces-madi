@@ -198,6 +198,11 @@ Orden recomendado: migración `014` → secretos → funciones → frontend.
 
 Nunca expongas `SUPABASE_SERVICE_ROLE_KEY` ni `OPENAI_API_KEY` en el frontend.
 
+### 8.5 Instagram
+
+La publicación programada de carruseles (funciones `instagram-*`, migración `015`, app de Meta, secretos y
+tarea `pg_cron`) se configura con la guía [`INSTAGRAM_SETUP.md`](INSTAGRAM_SETUP.md).
+
 ## 9. Pasos de verificacion
 
 1. Login con usuario admin.
