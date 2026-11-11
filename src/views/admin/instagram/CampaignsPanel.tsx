@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Pause, Play, Sparkles, X } from 'lucide-react';
+import { CalendarDays, CheckCheck, Pause, Play, Sparkles, X } from 'lucide-react';
 import type { AdminCategory, AdminCostume } from '../../../types';
 import {
+  approveCampaignPending,
   createCampaign,
   createInstagramPost,
   fetchCampaigns,
@@ -47,6 +48,8 @@ interface CampaignsPanelProps {
   userId: string | null;
   onOpenCostume: (costumeId: string) => void;
   onCreated: () => void;
+  /** Recarga el calendario sin salir de la pestaña de campañas. */
+  onPostsChanged: () => void;
   onNotify: (text: string) => void;
   onError: (error: unknown) => void;
   requestConfirm: (options: { title: string; message: string; confirmLabel: string; onConfirm: () => void }) => void;
@@ -56,7 +59,7 @@ function todayBogota() {
   return new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
-export default function CampaignsPanel({ costumes, categories, userId, onOpenCostume, onCreated, onNotify, onError, requestConfirm }: CampaignsPanelProps) {
+export default function CampaignsPanel({ costumes, categories, userId, onOpenCostume, onCreated, onPostsChanged, onNotify, onError, requestConfirm }: CampaignsPanelProps) {
   const [campaigns, setCampaigns] = useState<InstagramCampaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -76,6 +79,37 @@ export default function CampaignsPanel({ costumes, categories, userId, onOpenCos
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const approveAll = (campaign: InstagramCampaign) => {
+    const { pendingFuture, firstAt, lastAt } = campaign.approval;
+    const range =
+      firstAt && lastAt
+        ? firstAt === lastAt
+          ? ` para el ${formatBogota(firstAt)}`
+          : ` entre el ${formatBogota(firstAt, { timeStyle: undefined })} y el ${formatBogota(lastAt, { timeStyle: undefined })}`
+        : '';
+    requestConfirm({
+      title: `¿Aprobar ${pendingFuture === 1 ? 'el carrusel pendiente' : `los ${pendingFuture} carruseles pendientes`} de "${campaign.name}"?`,
+      message:
+        `${pendingFuture === 1 ? 'Queda programado' : 'Quedan programados'}${range} y se publican solos a su hora, con el texto que tienen ahora. Te recomendamos haber revisado los textos en el calendario.` +
+        (campaign.status === 'pausada' ? ' La campaña está en pausa: quedan aprobados, pero no se publican hasta que la reanudes.' : ''),
+      confirmLabel: pendingFuture === 1 ? 'Aprobar 1 carrusel' : `Aprobar ${pendingFuture} carruseles`,
+      onConfirm: async () => {
+        try {
+          const approved = await approveCampaignPending(campaign.id, userId);
+          onNotify(
+            approved === 0
+              ? 'No había carruseles pendientes por aprobar (puede que ya se hubieran aprobado).'
+              : `${approved === 1 ? '1 carrusel aprobado' : `${approved} carruseles aprobados`}: se publicarán a su hora.`
+          );
+          void load();
+          onPostsChanged();
+        } catch (error) {
+          onError(error);
+        }
+      },
+    });
+  };
 
   const changeStatus = (campaign: InstagramCampaign, status: 'activa' | 'pausada' | 'cancelada') => {
     const apply = async () => {
@@ -173,8 +207,32 @@ export default function CampaignsPanel({ costumes, categories, userId, onOpenCos
                 </p>
               </details>
             ) : null}
+            {['activa', 'pausada'].includes(campaign.status) && (campaign.approval.drafts || campaign.approval.pendingOverdue) ? (
+              <ul className="space-y-1 text-sm text-[#5C5257]">
+                {campaign.approval.drafts ? (
+                  <li>
+                    {campaign.approval.drafts === 1
+                      ? '1 borrador sin texto: complétalo en el calendario.'
+                      : `${campaign.approval.drafts} borradores sin texto: complétalos en el calendario.`}
+                  </li>
+                ) : null}
+                {campaign.approval.pendingOverdue ? (
+                  <li>
+                    {campaign.approval.pendingOverdue === 1
+                      ? '1 pendiente vencido: cámbiale la fecha en el calendario.'
+                      : `${campaign.approval.pendingOverdue} pendientes vencidos: cámbiales la fecha en el calendario.`}
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
             {['activa', 'pausada'].includes(campaign.status) ? (
               <div className="flex flex-wrap gap-2">
+                {campaign.approval.pendingFuture ? (
+                  <button type="button" onClick={() => approveAll(campaign)} className={primaryButton}>
+                    <CheckCheck size={18} strokeWidth={1.75} aria-hidden="true" />
+                    Aprobar todos los pendientes ({campaign.approval.pendingFuture})
+                  </button>
+                ) : null}
                 {campaign.status === 'activa' ? (
                   <button type="button" onClick={() => changeStatus(campaign, 'pausada')} className={secondaryButton}>
                     <Pause size={18} strokeWidth={1.75} aria-hidden="true" />
