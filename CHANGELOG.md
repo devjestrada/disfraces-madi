@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-11
+
+### Added
+- Botón **"Aprobar todos los pendientes (N)"** en la tarjeta de cada campaña de Instagram (activa o en pausa): aprueba de una vez, previa confirmación con la cantidad y el rango de fechas, todos los carruseles pendientes con fecha futura de esa campaña, sin tocar los de otras campañas, reglas o manuales.
+- La tarjeta de la campaña señala los borradores sin texto y los pendientes vencidos, que no se aprueban en bloque.
+
 ## [0.16.0] - 2026-11-10
 
 ### Added

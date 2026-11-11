@@ -154,6 +154,7 @@ export default function InstagramSection(props: InstagramSectionProps) {
             void loadPosts();
             setTab('calendario');
           }}
+          onPostsChanged={() => void loadPosts()}
           onNotify={(text) => notify(text)}
           onError={notifyError}
           requestConfirm={requestConfirm}

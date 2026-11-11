@@ -448,22 +448,58 @@ export interface InstagramCampaign {
   state: { sin_fecha?: Array<{ costume_id: string; name: string; detected_at: string }> } | null;
   created_at: string;
   counts: Partial<Record<InstagramPostStatus, number>>;
+  /** Para "Aprobar todos los pendientes": pendientes con fecha futura, vencidos y borradores. */
+  approval: {
+    pendingFuture: number;
+    firstAt: string | null;
+    lastAt: string | null;
+    pendingOverdue: number;
+    drafts: number;
+  };
 }
 
 export async function fetchCampaigns(): Promise<InstagramCampaign[]> {
   const { data, error } = await supabaseAdmin
     .from('instagram_campaigns')
-    .select('*, instagram_posts(status)')
+    .select('*, instagram_posts(status, scheduled_at)')
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
+  const now = Date.now();
   return (data ?? []).map((row: any) => {
     const counts: Partial<Record<InstagramPostStatus, number>> = {};
-    (row.instagram_posts ?? []).forEach((post: { status: InstagramPostStatus }) => {
+    const approval: InstagramCampaign['approval'] = { pendingFuture: 0, firstAt: null, lastAt: null, pendingOverdue: 0, drafts: 0 };
+    (row.instagram_posts ?? []).forEach((post: { status: InstagramPostStatus; scheduled_at: string }) => {
       counts[post.status] = (counts[post.status] ?? 0) + 1;
+      if (post.status === 'borrador') approval.drafts += 1;
+      if (post.status !== 'pendiente') return;
+      if (new Date(post.scheduled_at).getTime() <= now) {
+        approval.pendingOverdue += 1;
+        return;
+      }
+      approval.pendingFuture += 1;
+      if (!approval.firstAt || post.scheduled_at < approval.firstAt) approval.firstAt = post.scheduled_at;
+      if (!approval.lastAt || post.scheduled_at > approval.lastAt) approval.lastAt = post.scheduled_at;
     });
     const { instagram_posts: _posts, ...campaign } = row;
-    return { ...campaign, counts } as InstagramCampaign;
+    return { ...campaign, counts, approval } as InstagramCampaign;
   });
+}
+
+/**
+ * Aprueba todos los carruseles pendientes de una campaña con fecha futura (spec aprobar_campana_completa).
+ * El filtro va en la base de datos: nunca toca borradores, vencidos ni carruseles de otros orígenes.
+ */
+export async function approveCampaignPending(campaignId: string, userId: string | null) {
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabaseAdmin
+    .from('instagram_posts')
+    .update({ status: 'programado', approved_at: nowIso, approved_by: userId, updated_at: nowIso })
+    .eq('campaign_id', campaignId)
+    .eq('status', 'pendiente')
+    .gt('scheduled_at', nowIso)
+    .select('id');
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
 }
 
 export interface NewCampaignInput {
