@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.17.1] - 2026-11-12
+
+### Fixed
+- Actualizadas las dependencias `express`, `browserslist`, `source-map-js`, `sharp` y `vite` (lockfile, sin cambios en `package.json`) para resolver las 16 vulnerabilidades reportadas por Dependabot. Ninguna tenía explotabilidad real demostrable en el código actual.
+
 ## [0.17.0] - 2026-11-11
 
 ### Added
